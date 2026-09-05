@@ -7,6 +7,7 @@ import { requestConnector, subscribeConnectorMessages } from './connector';
 
 const SYNC_HISTORY_KEY = 'chewmash:get-sync-history:v1';
 const MAX_SYNC_HISTORY = 6;
+export const GET_SYNC_HISTORY_EVENT = 'chewmash:get-sync-history';
 
 export interface GetConnectorModel {
   installed: boolean;
@@ -28,8 +29,8 @@ export function useGetConnector(
   const [busy, setBusy] = useState(false);
   const [version, setVersion] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [syncHistory, setSyncHistory] = useState<ConnectorSyncStatus[]>(() => readSyncHistory());
-  const [syncStatus, setSyncStatus] = useState<ConnectorSyncStatus | null>(() => readSyncHistory()[0] ?? null);
+  const [syncHistory, setSyncHistory] = useState<ConnectorSyncStatus[]>(() => readGetSyncHistory());
+  const [syncStatus, setSyncStatus] = useState<ConnectorSyncStatus | null>(() => readGetSyncHistory()[0] ?? null);
 
   const rememberSyncStatus = useCallback((status: ConnectorSyncStatus) => {
     setSyncHistory(current => {
@@ -168,7 +169,7 @@ export function useGetConnector(
   };
 }
 
-function readSyncHistory(): ConnectorSyncStatus[] {
+export function readGetSyncHistory(): ConnectorSyncStatus[] {
   if (typeof localStorage === 'undefined') return [];
   try {
     const raw = localStorage.getItem(SYNC_HISTORY_KEY);
@@ -185,6 +186,7 @@ function writeSyncHistory(history: ConnectorSyncStatus[]) {
   if (typeof localStorage === 'undefined') return;
   try {
     localStorage.setItem(SYNC_HISTORY_KEY, JSON.stringify(history.slice(0, MAX_SYNC_HISTORY)));
+    window.dispatchEvent(new Event(GET_SYNC_HISTORY_EVENT));
   } catch {
     // Sync history is optional UI metadata; storage failures should not block syncing.
   }
