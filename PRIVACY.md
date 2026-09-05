@@ -1,33 +1,46 @@
-# ChewMash Privacy Policy
+# chewmash Privacy Policy
 
-ChewMash is a privacy-first Cal Poly Dining Dollars dashboard. It is designed so Cal Poly authentication remains between the user, the browser, and Cal Poly/CBORD.
+chewmash is a privacy-first Cal Poly Dining Dollars dashboard. It is designed so Cal Poly authentication remains between the user, the browser, and Cal Poly/CBORD.
 
-## Data ChewMash reads
+chewmash currently has a public website and an optional browser-extension path. Neither path requires a chewmash account.
 
-When the user opens the authenticated Cal Poly GET Transaction History page, the ChewMash extension may read only the structured dining information needed for the dashboard:
+## Data chewmash reads
+
+### Website
+
+Users may choose to import Cal Poly CBORD statement PDFs. PDF parsing happens locally in the browser. The website reads only the structured dining information needed to build the dashboard from those files.
+
+### Browser extension
+
+When the user opens the authenticated Cal Poly GET Transaction History page, the chewmash extension may read only the structured dining information needed for the dashboard:
 
 - transaction date and time
 - dining location / activity
 - transaction amount
 - visible Dining Dollars balance, when the page actually provides one
 
-Users may also choose to import Cal Poly CBORD statement PDFs. PDF parsing happens locally in the browser.
+## Data chewmash stores
 
-## Data ChewMash stores
+### Website
 
-ChewMash stores its application data locally in the browser's extension storage (`chrome.storage.local` / `browser.storage.local`). Stored data may include:
+The public web app stores its application state locally in browser IndexedDB on the user's device. Stored data may include:
 
 - structured dining transactions
 - balance snapshots
 - Dining Dollars plan dates and starting budget
 - away / break periods used for budget calculations
-- local GET capture diagnostics such as capture time, row count, and number of matched transactions
 
-The extension does not require a ChewMash account or backend database.
+The website may also copy the original GitHub Pages prototype's `chewmash:v1` localStorage state into the new typed IndexedDB repository when both versions run on the same origin. The old value is not deleted by that migration.
 
-## Data ChewMash does not intentionally collect or store
+### Browser extension
 
-ChewMash does not intentionally collect or store:
+The extension stores its application data locally in extension storage (`chrome.storage.local` / `browser.storage.local`). It may additionally store local GET capture diagnostics such as capture time, row count, and number of matched transactions.
+
+The current chewmash web beta and extension do not require a backend database for dining history.
+
+## Data chewmash does not intentionally collect or store
+
+chewmash does not intentionally collect or store:
 
 - Cal Poly usernames or passwords
 - authentication cookies
@@ -35,29 +48,31 @@ ChewMash does not intentionally collect or store:
 - student IDs or card numbers
 - raw GET page HTML
 - general browser history
-- browsing activity outside the explicitly permitted Cal Poly GET pages
+- browsing activity outside the explicitly permitted Cal Poly GET pages used by the extension
 
-ChewMash does not sell dining data, use dining data for advertising, or transmit dining transaction history to GitHub.
+chewmash does not sell dining data, use dining data for advertising, or transmit dining transaction history to GitHub.
 
-## Network and permissions
+## Network and extension permissions
 
-ChewMash requests host access only to:
+The public web app is delivered as static application files. Imported statement contents and the resulting structured dining history are processed and stored locally in the browser.
+
+The optional browser extension requests host access only to:
 
 `https://get.cbord.com/calpoly/*`
 
-This permission is used to read the authenticated GET Transaction History page after the user signs in normally. ChewMash also requests extension storage and tab permissions used to save data locally and open or refresh the GET transaction-history tab from the dashboard.
+This permission is used to read the authenticated GET Transaction History page after the user signs in normally. The extension also requests storage and tab permissions used to save data locally and open or refresh the GET transaction-history tab from the dashboard.
 
 There is no `<all_urls>` permission and no remote-code execution path.
 
 ## Data control
 
-Users can clear imported dining data from the ChewMash dashboard. They can also export a local JSON backup and later import it on their own device.
+Users can clear imported dining data from the chewmash dashboard. They can also export a local JSON backup and later import it on their own device or browser.
 
-Removing the extension through the browser may also remove extension-local data according to the browser's extension-storage behavior.
+Clearing browser site data can remove the website's IndexedDB data. Removing the extension may remove extension-local data according to the browser's extension-storage behavior. Exporting a backup is the recommended way to keep a portable copy.
 
 ## Public repository warning
 
-ChewMash source code is public, but user dining data is not part of the repository. Do not commit exported statements, JSON backups, screenshots containing account details, or hard-coded personal transaction histories to the public repository.
+chewmash source code is public, but user dining data is not part of the repository. Do not commit exported statements, JSON backups, screenshots containing account details, or hard-coded personal transaction histories to the public repository.
 
 ## Contact and changes
 
