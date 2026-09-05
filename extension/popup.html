@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ChewMash GET Sync</title>
+  <style>
+    body{font-family:Arial,sans-serif;margin:0;padding:14px;width:300px;background:#f5f7f6;color:#1f2933}
+    h1{font-size:16px;margin:0 0 8px;color:#154f3a}
+    p{font-size:12px;line-height:1.45;margin:6px 0}
+    button{width:100%;border:0;border-radius:8px;padding:10px 12px;background:#154f3a;color:#fff;font-weight:700;cursor:pointer;margin:8px 0}
+    .card{background:#fff;border:1px solid #d7ddd9;border-radius:8px;padding:10px;margin-top:8px}
+    .muted{color:#667085}
+    .ok{color:#166534;font-weight:700}
+    .bad{color:#b42318;font-weight:700}
+    code{font-size:11px;word-break:break-word}
+  </style>
+</head>
+<body>
+  <h1>ChewMash GET Sync</h1>
+  <p class="muted">Open Cal Poly GET Transaction History, then press capture.</p>
+  <button id="capture">Capture this GET page</button>
+  <div class="card">
+    <p id="status">No capture attempted yet.</p>
+    <p id="details" class="muted"></p>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
