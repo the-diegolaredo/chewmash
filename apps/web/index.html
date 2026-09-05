@@ -8,7 +8,48 @@
     <title>chewmash</title>
   </head>
   <body>
+    <details id="connector-install-help" class="connector-install-help" open>
+      <summary>
+        <span>
+          <strong>Connect GET automatically</strong>
+          <small>Install the chewmash Chrome connector beta</small>
+        </span>
+        <span class="connector-install-chevron" aria-hidden="true">⌄</span>
+      </summary>
+      <div class="connector-install-body">
+        <p>The connector lets chewmash read your signed-in GET Transaction History without asking for your Cal Poly password.</p>
+        <a class="primary-button connector-download-button" href="./downloads/chewmash-connector-beta.zip" download>
+          Download chewmash connector beta
+        </a>
+        <ol class="connector-install-steps">
+          <li><strong>Download and unzip</strong> the connector folder.</li>
+          <li><strong>Open <code>chrome://extensions</code></strong> in Chrome and turn on Developer mode.</li>
+          <li><strong>First-time install:</strong> click <em>Load unpacked</em> and choose the unzipped connector folder.</li>
+          <li><strong>Updating an existing chewmash beta:</strong> replace the files inside your existing unpacked extension folder, then click <em>Reload</em> on chewmash. Keep the same folder if you want to preserve the extension ID and its local storage.</li>
+          <li><strong>Return to chewmash and refresh.</strong> The site should detect the connector; then click <em>Sync GET</em> and sign into Cal Poly normally if needed.</li>
+        </ol>
+        <p class="connector-install-note">This manual setup is only for the beta. A Chrome Web Store install can replace these steps later.</p>
+      </div>
+    </details>
+
     <div id="root"></div>
+
+    <script>
+      (() => {
+        const connectorTypes = new Set([
+          'CHEWMASH_CONNECTOR_READY',
+          'CHEWMASH_CONNECTOR_UPDATE',
+          'CHEWMASH_CONNECTOR_RESPONSE',
+        ]);
+
+        window.addEventListener('message', event => {
+          const message = event.data;
+          if (event.source !== window || event.origin !== window.location.origin) return;
+          if (!message || message.source !== 'chewmash-connector' || !connectorTypes.has(message.type)) return;
+          document.documentElement.classList.add('chewmash-connector-ready');
+        });
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
