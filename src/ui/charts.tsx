@@ -1,4 +1,11 @@
 import { useEffect, useState } from 'react';
+import pandaLogo from '../assets/brands/panda.svg?url';
+import chickFilALogo from '../assets/brands/chick-fil-a.svg?url';
+import subwayLogo from '../assets/brands/subway.svg?url';
+import jambaLogo from '../assets/brands/jamba.svg?url';
+import tacoBellLogo from '../assets/brands/taco-bell.svg?url';
+import starbucksLogo from '../assets/brands/starbucks.svg?url';
+import shakeSmartLogo from '../assets/brands/shake-smart.svg?url';
 import { campusDates } from '../lib/dates';
 import { dailyTotals, normalizeLocation } from '../lib/transactions';
 import type { DiningTransaction, IsoDate, PlanSettings } from '../lib/types';
@@ -262,7 +269,17 @@ export function DailySpendChart({
   );
 }
 
-type BrandMark = 'panda' | 'chickfila' | 'subway' | 'jamba' | 'starbucks' | 'shakesmart';
+type BrandMark = 'panda' | 'chickfila' | 'subway' | 'jamba' | 'tacobell' | 'starbucks' | 'shakesmart';
+
+const brandLogos: Record<BrandMark, string> = {
+  panda: pandaLogo,
+  chickfila: chickFilALogo,
+  subway: subwayLogo,
+  jamba: jambaLogo,
+  tacobell: tacoBellLogo,
+  starbucks: starbucksLogo,
+  shakesmart: shakeSmartLogo,
+};
 
 function brandForLocation(name: string): BrandMark | null {
   const value = name.toLowerCase();
@@ -270,8 +287,9 @@ function brandForLocation(name: string): BrandMark | null {
   if (value.includes('chick-fil-a') || value.includes('chick fil a')) return 'chickfila';
   if (value.includes('subway')) return 'subway';
   if (value.includes('jamba')) return 'jamba';
+  if (value.includes('taco bell')) return 'tacobell';
   if (value.includes('starbucks')) return 'starbucks';
-  if (value.includes('shake smart')) return 'shakesmart';
+  if (value.includes('shake smart') || value.includes('shakesmart')) return 'shakesmart';
   return null;
 }
 
@@ -300,59 +318,22 @@ function compactLabelLines(name: string): string[] {
 }
 
 function DiningBrandMark({ brand, cx, cy }: { brand: BrandMark; cx: number; cy: number }) {
-  const transform = `translate(${cx - 16} ${cy - 16})`;
-  switch (brand) {
-    case 'panda':
-      return (
-        <g transform={transform} aria-hidden="true">
-          <circle cx="16" cy="16" r="15" fill="#b7282e" />
-          <circle cx="16" cy="16" r="10.2" fill="#fff" />
-          <circle cx="10.3" cy="10.2" r="3" fill="#1d2428" />
-          <circle cx="21.7" cy="10.2" r="3" fill="#1d2428" />
-          <ellipse cx="12.4" cy="15.7" rx="2.5" ry="3.2" fill="#1d2428" />
-          <ellipse cx="19.6" cy="15.7" rx="2.5" ry="3.2" fill="#1d2428" />
-          <circle cx="16" cy="20.7" r="1.6" fill="#1d2428" />
-        </g>
-      );
-    case 'chickfila':
-      return (
-        <g transform={transform} aria-hidden="true">
-          <circle cx="16" cy="16" r="15" fill="#fff" stroke="#d5233f" strokeWidth="2" />
-          <path d="M22.8 8.9c-1.7-1.5-3.7-2.2-6.1-2.2-5.3 0-9.3 4-9.3 9.4 0 5.3 4 9.2 9.2 9.2 2.2 0 4.2-.6 5.8-1.8l-2.7-3.2c-.8.5-1.8.8-2.9.8-2.8 0-4.9-2.1-4.9-5 0-2.9 2.1-5.1 4.9-5.1 1.2 0 2.2.4 3.1 1l2.9-3.1Z" fill="#d5233f" />
-          <circle cx="24.1" cy="9" r="1.5" fill="#d5233f" />
-        </g>
-      );
-    case 'subway':
-      return (
-        <g transform={transform} aria-hidden="true">
-          <rect x="1" y="5" width="30" height="22" rx="8" fill="#07883f" />
-          <path d="M8 20h10.5v-3.4l6 5.4-6 5.2v-3.3H8Z" fill="#f9d616" transform="translate(0 -4)" />
-          <path d="M24 12H13.5v3.4l-6-5.4 6-5.2v3.3H24Z" fill="#fff" transform="translate(0 4)" />
-        </g>
-      );
-    case 'jamba':
-      return (
-        <g transform={transform} aria-hidden="true">
-          <circle cx="16" cy="17" r="13.5" fill="#f28b2d" />
-          <path d="M16 10c1.6-5 5.8-7.4 10.2-6.7-1 4.7-4.5 7.5-10.2 7.9Z" fill="#4a8b45" />
-          <path d="M11 17c4.6-2.7 9.1-2.2 12 1.2-3.2 3.5-8.7 4-12 1.7Z" fill="#fff" opacity=".95" />
-        </g>
-      );
-    case 'starbucks':
-      return (
-        <g transform={transform} aria-hidden="true">
-          <circle cx="16" cy="16" r="15" fill="#00754a" />
-          <path d="m16 6 2.4 6.1 6.6.4-5.1 4.2 1.7 6.4-5.6-3.6-5.6 3.6 1.7-6.4L7 12.5l6.6-.4Z" fill="#fff" />
-        </g>
-      );
-    case 'shakesmart':
-      return (
-        <g transform={transform} aria-hidden="true">
-          <circle cx="16" cy="16" r="15" fill="#315f46" />
-          <path d="m18.6 4.8-8.3 12h5.1l-2 10.4 8.3-12h-5.1Z" fill="#fff" />
-        </g>
-      );
-  }
+  const isWide = brand === 'jamba' || brand === 'shakesmart';
+  const isTall = brand === 'tacobell';
+  const width = isWide ? 44 : isTall ? 28 : 34;
+  const height = isWide ? 30 : isTall ? 40 : 34;
+  return (
+    <image
+      href={brandLogos[brand]}
+      x={cx - width / 2}
+      y={cy - height / 2}
+      width={width}
+      height={height}
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden="true"
+      pointerEvents="none"
+    />
+  );
 }
 
 export function PlaceSpendChart({ transactions }: { transactions: DiningTransaction[] }) {
