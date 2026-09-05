@@ -20,102 +20,229 @@
   text-transform: lowercase;
 }
 
-.connector-install-help {
-  position: fixed;
-  right: 18px;
-  bottom: 18px;
-  z-index: 80;
-  width: min(420px, calc(100vw - 36px));
-  overflow: hidden;
-  border: 1px solid #cfd8d3;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, .98);
-  box-shadow: 0 16px 44px rgba(16, 53, 39, .16);
-}
-
-.chewmash-connector-ready .connector-install-help {
-  display: none;
-}
-
-.connector-install-help summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px 16px;
-  color: #154f3a;
-  cursor: pointer;
-  list-style: none;
-}
-
-.connector-install-help summary::-webkit-details-marker {
-  display: none;
-}
-
-.connector-install-help summary > span:first-child {
+.first-run-loading {
+  min-height: 100dvh;
   display: grid;
-  gap: 2px;
-}
-
-.connector-install-help summary strong {
+  place-items: center;
+  color: #607269;
   font-size: 14px;
 }
 
-.connector-install-help summary small {
-  color: #607269;
-  font-size: 11px;
+.first-run-shell {
+  min-height: 100dvh;
+  padding: 28px 20px 56px;
+  background:
+    radial-gradient(circle at 16% 4%, rgba(215, 232, 222, .8), transparent 34%),
+    linear-gradient(180deg, #f8fbf9 0%, #eef5f0 100%);
 }
 
-.connector-install-chevron {
-  font-size: 20px;
-  line-height: 1;
-  transition: transform .18s ease;
+.first-run-brand {
+  width: min(780px, 100%);
+  margin: 0 auto 18px;
+  color: #154f3a;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -.02em;
 }
 
-.connector-install-help[open] .connector-install-chevron {
-  transform: rotate(180deg);
+.first-run-card {
+  width: min(780px, 100%);
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid #d2ddd6;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .98);
+  box-shadow: 0 24px 70px rgba(25, 66, 49, .12);
+  transition: opacity .45s ease, transform .45s ease;
 }
 
-.connector-install-body {
+.first-run-complete .first-run-card {
+  opacity: 0;
+  transform: translateY(-8px) scale(.99);
+}
+
+.first-run-heading {
+  padding: 42px 44px 34px;
+  border-bottom: 1px solid #e2e9e4;
+  background: linear-gradient(145deg, #f4faf6, #ffffff 68%);
+}
+
+.first-run-heading h1 {
+  max-width: 580px;
+  margin-top: 8px;
+  color: #173d2f;
+  font-size: clamp(32px, 6vw, 54px);
+  line-height: 1.02;
+  letter-spacing: -.045em;
+}
+
+.first-run-heading > p:last-child {
+  max-width: 610px;
+  margin-top: 18px;
+  color: #50665b;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.setup-progress {
   display: grid;
-  gap: 14px;
-  padding: 0 16px 16px;
-  border-top: 1px solid #e2e7e4;
+  padding: 8px 44px 10px;
 }
 
-.connector-install-body > p:first-child {
-  margin-top: 14px;
-  font-size: 12px;
+.setup-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 16px;
+  padding: 24px 0;
 }
 
-.connector-download-button {
+.setup-step:not(:last-child) {
+  border-bottom: 1px solid #e8edea;
+}
+
+.setup-step-marker {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #bfcfc5;
+  border-radius: 999px;
+  background: #f7faf8;
+  color: #154f3a;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.setup-step.done .setup-step-marker {
+  border-color: #2d7053;
+  background: #e5f1e9;
+}
+
+.setup-step-copy {
+  min-width: 0;
+}
+
+.setup-step-copy h2 {
+  margin: 2px 0 6px;
+  color: #1d4334;
+  font-size: 17px;
+  line-height: 1.25;
+}
+
+.setup-step-copy p {
+  max-width: 610px;
+  margin: 0;
+  color: #607269;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.setup-step-copy > .primary-button,
+.setup-download {
   width: fit-content;
+  margin-top: 14px;
   text-decoration: none;
 }
 
-.connector-install-steps {
+.setup-step-copy small {
+  display: block;
+  margin-top: 10px;
+  color: #607269;
+  line-height: 1.4;
+}
+
+.setup-instructions {
   display: grid;
-  gap: 9px;
+  gap: 10px;
+}
+
+.setup-instructions ol {
+  display: grid;
+  gap: 7px;
   margin: 0;
   padding-left: 20px;
-  color: #30483d;
+  color: #334b40;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.setup-instructions code {
+  padding: 2px 5px;
+  border: 1px solid #d7e1da;
+  border-radius: 5px;
+  background: #f4f8f5;
+  color: #154f3a;
+  font-size: 12px;
+}
+
+.setup-instructions details {
+  width: fit-content;
+  margin-top: 2px;
+  color: #496456;
+  font-size: 12px;
+}
+
+.setup-instructions summary,
+.first-run-other-options summary {
+  cursor: pointer;
+}
+
+.setup-instructions details p {
+  max-width: 570px;
+  margin-top: 8px;
+  padding-left: 2px;
+  font-size: 12px;
+}
+
+.setup-message {
+  max-width: 610px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: #f2f6f3;
+  color: #496456;
   font-size: 12px;
   line-height: 1.45;
 }
 
-.connector-install-steps code {
-  padding: 1px 4px;
-  border: 1px solid #d8e0db;
-  border-radius: 4px;
-  background: #f4f7f5;
-  color: #154f3a;
-  font-size: 11px;
+.first-run-other-options {
+  margin: 8px 44px 0;
+  border: 1px solid #dce5df;
+  border-radius: 14px;
+  background: #fafcfb;
 }
 
-.connector-install-note {
-  margin: 0;
+.first-run-other-options > summary {
+  padding: 15px 16px;
+  color: #496456;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.other-options-body {
+  display: grid;
+  gap: 14px;
+  padding: 0 16px 16px;
+  border-top: 1px solid #e5ebe7;
+}
+
+.other-options-body > p {
+  margin-top: 14px;
   color: #607269;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.first-run-privacy {
+  margin: 20px 44px 34px;
+  color: #6a7b72;
   font-size: 11px;
+  line-height: 1.5;
+}
+
+.first-run-privacy strong {
+  color: #3d594c;
 }
 
 .web-welcome {
@@ -164,12 +291,52 @@
 }
 
 @media (max-width: 720px) {
-  .connector-install-help {
-    right: 12px;
-    bottom: 84px;
-    width: calc(100vw - 24px);
-    max-height: min(68dvh, 560px);
-    overflow-y: auto;
+  .first-run-shell {
+    padding: 18px 12px 34px;
+  }
+
+  .first-run-brand {
+    margin-bottom: 12px;
+    padding-left: 4px;
+  }
+
+  .first-run-card {
+    border-radius: 18px;
+  }
+
+  .first-run-heading {
+    padding: 30px 22px 26px;
+  }
+
+  .first-run-heading h1 {
+    font-size: clamp(34px, 11vw, 46px);
+  }
+
+  .first-run-heading > p:last-child {
+    font-size: 14px;
+  }
+
+  .setup-progress {
+    padding: 4px 22px 8px;
+  }
+
+  .setup-step {
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 12px;
+    padding: 20px 0;
+  }
+
+  .setup-step-marker {
+    width: 30px;
+    height: 30px;
+  }
+
+  .first-run-other-options {
+    margin: 6px 22px 0;
+  }
+
+  .first-run-privacy {
+    margin: 18px 22px 26px;
   }
 
   .web-welcome {
