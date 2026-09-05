@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "ChewMash GET Sync",
+  "version": "0.1.0",
+  "description": "Privately sync Cal Poly GET dining transactions into ChewMash without collecting Cal Poly credentials.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://get.cbord.com/calpoly/*",
+    "https://the-diegolaredo.github.io/chewmash/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://get.cbord.com/calpoly/*"],
+      "js": ["get-content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://the-diegolaredo.github.io/chewmash/*"],
+      "js": ["app-bridge.js"],
+      "run_at": "document_start"
+    }
+  ]
+}
