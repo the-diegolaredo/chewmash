@@ -40,9 +40,10 @@ export function DailySpendChart({
   const x = (index: number) => left + (dates.length === 1 ? innerWidth / 2 : index * innerWidth / (dates.length - 1));
   const y = (value: number) => top + innerHeight - (value / max) * innerHeight;
   const labels = [...new Set([0, Math.floor((dates.length - 1) / 2), dates.length - 1])];
+  const linePoints = values.map((value, index) => `${x(index)},${y(value)}`).join(' ');
 
   return (
-    <svg className="chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Daily spending dot chart">
+    <svg className="chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Daily spending line and dot chart">
       {[0, 1, 2, 3, 4].map(step => {
         const value = max * step / 4;
         const yy = y(value);
@@ -54,6 +55,7 @@ export function DailySpendChart({
         );
       })}
       <line className="chart-target" x1={left} x2={width - right} y1={y(target)} y2={y(target)} />
+      {values.length > 1 ? <polyline className="chart-line" points={linePoints} /> : null}
       {values.map((value, index) => (
         <circle
           key={dates[index]}
