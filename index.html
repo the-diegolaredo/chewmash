@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#154f3a" />
+  <title>ChewMash</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">Chew<span>Mash</span></div>
+      <button class="text-btn" id="accountBtn" type="button">Account</button>
+    </header>
+
+    <section class="page active" id="homePage">
+      <div class="home-intro">
+        <div class="eyebrow">Dining Dollars</div>
+        <h1>Today at a glance</h1>
+        <p class="subhead">A simple view of how your spending compares with your semester plan.</p>
+        <div class="asof"><span class="status-dot"></span><span id="asOfLabel">No data imported yet</span></div>
+      </div>
+
+      <div class="widget">
+        <div class="widget-title">Budget summary</div>
+        <div class="widget-inner">
+          <div class="carousel" id="metricCarousel">
+            <article class="metric-card">
+              <div class="metric-label">Average spent</div>
+              <div>
+                <div class="metric-value" id="avgSpent">$0.00</div>
+                <div class="metric-note" id="avgSpentNote">Per campus day so far</div>
+              </div>
+            </article>
+            <article class="metric-card">
+              <div class="metric-label">Spent that day</div>
+              <div>
+                <div class="metric-value" id="todaySpent">$0.00</div>
+                <div class="metric-note" id="todaySpentNote">Based on your latest imported day</div>
+              </div>
+            </article>
+            <article class="metric-card status-card" id="statusCard">
+              <div class="metric-label">Budget status</div>
+              <div>
+                <div class="metric-value" id="budgetStatus">On budget</div>
+                <div class="metric-note" id="budgetStatusNote">Import a statement to calculate your pace</div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <div>
+          <h2>Spending</h2>
+          <p class="subhead">Daily totals and where your Dining Dollars are going.</p>
+        </div>
+      </div>
+
+      <div class="money-grid">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>Spend by day</h3>
+              <div class="panel-kicker">Each dot is one campus day</div>
+            </div>
+          </div>
+          <div class="chart" id="dailyChart"></div>
+          <div class="legend-row"><span class="legend-key"><i></i>Daily spend</span><span class="legend-key target"><i></i>Target</span></div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>Spend by place</h3>
+              <div class="panel-kicker">Share of itemized purchases</div>
+            </div>
+          </div>
+          <div class="chart" id="placeChart"></div>
+        </section>
+      </div>
+      <p class="footer-note">Your dining data stays in this browser unless you export a backup yourself.</p>
+    </section>
+
+    <section class="page" id="uploadPage">
+      <div class="home-intro">
+        <div class="eyebrow">Update data</div>
+        <h1>Upload or sync</h1>
+        <p class="subhead">Use GET sync when the extension is installed, or keep monthly PDF statements as a private fallback.</p>
+      </div>
+
+      <div class="upload-shell">
+        <div class="widget">
+          <div class="widget-title">GET sync</div>
+          <div class="widget-inner">
+            <h2>Sync from Cal Poly GET</h2>
+            <p class="subhead">ChewMash never asks for your Cal Poly password. Sign in on GET normally; the extension reads only dining transaction fields from Transaction History.</p>
+            <div class="button-row">
+              <button class="primary-btn" id="syncGet" type="button">Open GET &amp; sync</button>
+            </div>
+            <div class="upload-message" id="syncMessage">Install the ChewMash GET Sync extension to use one-click sync. PDF import works without it.</div>
+          </div>
+        </div>
+
+        <div class="widget">
+          <div class="widget-title">PDF fallback</div>
+          <div class="widget-inner">
+            <div class="drop-zone" id="dropZone" tabindex="0" role="button" aria-label="Upload GET statement PDFs">
+              <div class="upload-icon" aria-hidden="true">↑</div>
+              <h2>Upload monthly GET PDFs</h2>
+              <p>Select one or more CBORD GET statement PDFs. They are parsed in your browser and are not uploaded to a server.</p>
+              <button class="secondary-btn" id="choosePdf" type="button">Choose PDFs</button>
+              <input id="pdfInput" type="file" accept="application/pdf,.pdf" multiple hidden />
+            </div>
+            <div class="upload-message" id="uploadMessage">No PDFs imported this session.</div>
+          </div>
+        </div>
+
+        <div class="recent-imports">
+          <h2>Imported sources</h2>
+          <div class="import-list" id="importList"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="accountPage">
+      <div class="home-intro">
+        <div class="eyebrow">Account</div>
+        <h1>Plan details</h1>
+        <p class="subhead">Adjust your semester dates, review your balance, and manage locally stored data.</p>
+      </div>
+
+      <section class="account-balance">
+        <div class="small">Remaining Dining Dollars</div>
+        <div class="big" id="remainingBalance">$3,295.00</div>
+        <div class="detail" id="balanceDetail">No balance snapshot imported yet</div>
+      </section>
+
+      <div class="account-grid">
+        <section class="account-section">
+          <h2>Plan settings</h2>
+          <p class="hint">Your budget is spread only across campus days inside this window, excluding away periods.</p>
+          <div class="settings-grid">
+            <div class="field"><label for="budgetInput">Starting Dining Dollars</label><input id="budgetInput" type="number" step="0.01" /></div>
+            <div class="field"><label for="todayInput">As-of date</label><input id="todayInput" type="date" /></div>
+            <div class="field"><label for="startInput">Arrival date</label><input id="startInput" type="date" /></div>
+            <div class="field"><label for="endInput">Plan end date</label><input id="endInput" type="date" /></div>
+          </div>
+          <div class="away-grid" style="margin-top:12px">
+            <div class="away-card"><div class="away-title">Away period 1</div><div class="field"><label>Start</label><input id="break1Start" type="date" /></div><div class="field"><label>End</label><input id="break1End" type="date" /></div></div>
+            <div class="away-card"><div class="away-title">Away period 2</div><div class="field"><label>Start</label><input id="break2Start" type="date" /></div><div class="field"><label>End</label><input id="break2End" type="date" /></div></div>
+            <div class="away-card"><div class="away-title">Away period 3</div><div class="field"><label>Start</label><input id="break3Start" type="date" /></div><div class="field"><label>End</label><input id="break3End" type="date" /></div></div>
+          </div>
+          <div class="settings-actions"><button class="primary-btn" id="saveSettings" type="button">Save settings</button></div>
+        </section>
+
+        <section class="account-section">
+          <h2>Budget details</h2>
+          <p class="hint">Useful numbers that stay out of the minimal Home view.</p>
+          <div class="balance-meta">
+            <div class="meta-card"><span>Original daily target</span><strong id="dailyTarget">$0.00</strong></div>
+            <div class="meta-card"><span>Safe per remaining day</span><strong id="safePerDay">$0.00</strong></div>
+            <div class="meta-card"><span>Official spent</span><strong id="officialSpent">$0.00</strong></div>
+            <div class="meta-card"><span>Itemized spend</span><strong id="itemizedSpent">$0.00</strong></div>
+          </div>
+          <div class="data-note" id="reconcileNote">Import a balance snapshot to compare official and itemized totals.</div>
+        </section>
+
+        <section class="account-section full">
+          <h2>Imported transactions</h2>
+          <p class="hint" id="transactionCount">0 transactions stored locally.</p>
+          <div class="table-shell">
+            <table>
+              <thead><tr><th>Date</th><th>Time</th><th>Place</th><th>Source</th><th style="text-align:right">Amount</th></tr></thead>
+              <tbody id="transactionTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="account-section full">
+          <h2>Local data controls</h2>
+          <p class="hint">Backups are JSON files you choose to save. ChewMash does not upload them anywhere.</p>
+          <div class="settings-actions">
+            <button class="secondary-btn" id="exportData" type="button">Export backup</button>
+            <button class="secondary-btn" id="importBackupBtn" type="button">Import backup</button>
+            <button class="danger-btn" id="clearData" type="button">Clear imported data</button>
+            <input id="backupInput" type="file" accept="application/json,.json" hidden />
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Primary navigation">
+    <button class="nav-btn active" type="button" data-page="homePage" aria-label="Home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/></svg>
+      Home
+    </button>
+    <button class="nav-btn" type="button" data-page="uploadPage" aria-label="Upload">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 15v5h16v-5"/></svg>
+      Upload
+    </button>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>
