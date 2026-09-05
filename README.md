@@ -1,17 +1,19 @@
 # chewmash
 
-chewmash is a privacy-first Cal Poly Dining Dollars dashboard. The project now has two delivery surfaces that share the same typed budget, transaction, PDF, and UI code:
+chewmash is a privacy-first Cal Poly Dining Dollars dashboard. The public website is now the primary product surface, with an optional Manifest V3 browser connector for authenticated GET transaction capture.
 
-- a **public React web app** for no-install PDF import and local budgeting
-- a **Manifest V3 browser extension** for authenticated GET transaction capture
-
-The extension remains working while the website is introduced, so the web migration does not remove the existing beta.
+The website and connector share the same typed budget, transaction, PDF, storage, and UI logic. Dining history stays local to the user's browser; there is no chewmash dining-data backend.
 
 ## Privacy model
 
 chewmash does **not** ask for or store a Cal Poly username or password.
 
-The web app parses imported CBORD statement PDFs locally and stores structured dining state in browser IndexedDB. The extension reads only the structured dining fields needed from the authenticated GET Transaction History page and stores them in extension-local storage.
+The web app stores structured dining state in browser IndexedDB. It can receive that data in two local-only ways:
+
+- parse a supported Cal Poly CBORD statement PDF directly in the browser
+- receive already-parsed GET dining fields from the optional chewmash connector on the same device
+
+The connector reads only the structured dining fields needed from the authenticated GET Transaction History page after the student signs in normally.
 
 Depending on the surface, chewmash may store locally:
 
@@ -20,37 +22,48 @@ Depending on the surface, chewmash may store locally:
 - transaction amount
 - a balance snapshot only when GET or an imported statement actually provides one
 - Dining Dollars plan dates, away periods, and starting budget
-- extension-only capture diagnostics such as capture time and matched row count
+- connector-only capture diagnostics such as capture time and matched row count
 
-chewmash does not store or transmit GET cookies, session tokens, credentials, student IDs, or raw GET page HTML. The current web beta has no dining-data backend.
+chewmash does not store or transmit GET cookies, session tokens, credentials, student IDs, card numbers, or raw GET page HTML.
 
 ## Current architecture
 
 ```text
-No-install web path
+Recommended automatic-sync path
+
+chewmash website
+        │
+        │ local allowlisted page bridge
+        ▼
+chewmash connector extension
+        │
+        ▼
+Cal Poly GET Transaction History
+        │
+        ▼
+parsed structured dining fields
+        │
+        ▼
+extension-local storage
+        │
+        ▼
+website IndexedDB
+        │
+        ▼
+React dashboard
+
+No-extension fallback
 
 CBORD statement PDF
         ↓
 local PDF parser
         ↓
-typed repository
-        ↓
-IndexedDB
+website IndexedDB
         ↓
 React dashboard
-
-Optional automatic-sync path
-
-Cal Poly GET
-        ↓
-WXT content script
-        ↓
-typed repository
-        ↓
-chrome.storage.local
-        ↓
-React extension dashboard
 ```
+
+The website bridge currently runs only on the GitHub Pages beta origin and the future `chewmash.app` origin. It supports three small actions: connector detection, pulling structured local state, and an explicit user-requested GET sync.
 
 ## Repository layout
 
@@ -59,20 +72,21 @@ chewmash/
 ├── apps/
 │   └── web/                           # Vite + React public website
 ├── entrypoints/
-│   ├── background.ts                  # WXT extension background
+│   ├── background.ts                  # connector background / GET opener
+│   ├── chewmash-web.content.ts        # website ↔ extension local bridge
 │   ├── get-history.content.ts         # GET transaction capture
-│   └── dashboard/                     # React extension dashboard
+│   └── dashboard/                     # legacy/full extension dashboard retained during beta
 ├── src/
+│   ├── connector/                     # bridge protocol
 │   ├── get/                           # GET parser and sync status
 │   ├── lib/                           # Budget, date, and transaction domain logic
 │   ├── pdf/                           # Local CBORD statement parser
 │   ├── storage/                       # Shared repository + extension/web adapters
 │   └── ui/                            # Shared React UI helpers and charts
-├── extension/                         # Legacy extension fallback
-├── index.html / styles.css / app.js   # Legacy Pages prototype kept temporarily
+├── CONNECTOR_PLAN.md
 ├── WEB_BETA.md
 ├── PRIVACY.md
-└── HANDOFF.md
+└── STORE_LISTING.md
 ```
 
 ## Development
@@ -82,7 +96,7 @@ Requirements: Node.js 22+ and npm.
 ```bash
 npm install
 npm test
-npm run build       # WXT extension
+npm run build       # WXT connector/extension
 npm run build:web   # public website
 ```
 
@@ -97,10 +111,12 @@ WXT writes the unpacked Chrome build to `.output/chrome-mv3/`. Vite writes the w
 
 ## Web beta
 
-The public website is built from `apps/web`. It supports:
+The public website is built from `apps/web` and deployed by GitHub Actions. It supports:
 
 - first-run onboarding
-- local CBORD statement import
+- optional GET connector detection and sync
+- automatic copying of a completed GET capture into website IndexedDB
+- local CBORD statement import as a fallback
 - the three-card carousel
 - daily spend line/dot chart with clickable day details
 - spending by dining location
@@ -108,19 +124,30 @@ The public website is built from `apps/web`. It supports:
 - backup import/export
 - local IndexedDB storage
 
-When deployed over the same GitHub Pages origin as the original prototype, the web app can copy the old `chewmash:v1` localStorage state into the new typed IndexedDB repository once. It does not delete the old value.
+The current beta lives at:
 
-GitHub Actions contains a Pages deployment workflow for the web beta. See `WEB_BETA.md` for the deployment and future custom-domain steps.
+`https://the-diegolaredo.github.io/chewmash/`
 
-## Why automatic GET sync still needs a connector
+The connector already includes `https://chewmash.app/*` in its narrow website allowlist so moving to the custom domain later does not require redesigning the bridge.
 
-A normal website cannot inspect a different authenticated website's DOM. For that reason, the public website cannot directly scrape the user's signed-in GET tab.
+## GET connector behavior
 
-The current extension provides the authenticated capture path without collecting Cal Poly credentials. Long term, that extension can become a small optional connector while the website remains the primary user experience.
+A normal website cannot inspect another authenticated website's DOM, so automatic GET sync still needs the browser connector.
+
+When the user chooses **Sync GET** on the chewmash website:
+
+1. the website sends an allowlisted local message to the connector bridge;
+2. the extension opens or focuses the exact Cal Poly GET Transaction History URL;
+3. the student signs into Cal Poly normally if needed;
+4. the existing GET content script parses transaction rows into structured dining fields;
+5. extension storage changes are pushed back to the open chewmash website;
+6. the website sanitizes and merges those fields into IndexedDB.
+
+The connector toolbar action now opens the public chewmash website rather than making the extension dashboard the primary experience.
 
 ## PDF import
 
-Cal Poly CBORD statement PDFs can be imported in both the website and extension. Parsing happens locally in the browser. The parser is intentionally conservative: if a PDF does not look like a supported CBORD statement, chewmash rejects it rather than guessing.
+Cal Poly CBORD statement PDFs remain a no-extension fallback. Parsing happens locally in the browser. The parser is intentionally conservative: if a PDF does not look like a supported CBORD statement, chewmash rejects it rather than guessing.
 
 ## Budget calculations
 
@@ -136,14 +163,20 @@ The domain layer is separate from the UI and covered by automated tests. In part
 
 ## Security notes
 
-The extension requests only:
+The connector requests only:
 
 - `storage`
 - `tabs`
-- host access to `https://get.cbord.com/calpoly/*`
+- host permission to `https://get.cbord.com/calpoly/*`
+
+Its content scripts are restricted to:
+
+- `https://get.cbord.com/calpoly/*`
+- `https://the-diegolaredo.github.io/chewmash/*`
+- `https://chewmash.app/*`
 
 There is no `<all_urls>` permission, no remote-code execution path, and no backend upload path for dining data. Personal statements, backups, and transaction histories should never be committed to this public repository.
 
 ## CI
 
-Every pull request runs tests, builds the extension, validates the generated manifest, builds the Chrome package, and builds the public web app. Successful runs expose separate extension and web artifacts.
+Every pull request runs tests, builds the connector/extension, validates the generated manifest, builds the Chrome package, and builds the public web app. Successful runs expose separate extension and web artifacts.

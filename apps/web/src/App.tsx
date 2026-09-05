@@ -7,6 +7,7 @@ import { migrateLegacyWebState, webStateRepository } from '../../../src/storage/
 import { DailySpendChart, PlaceSpendChart } from '../../../src/ui/charts';
 import { FloatingNav, MetricCard, MetricDetailModal, SectionCard } from '../../../src/ui/components';
 import { humanDate, latestBalanceSnapshot, localDate, money, mostRecentDataDate, spendOnDate } from '../../../src/ui/utils';
+import { useGetConnector, type GetConnectorModel } from './useGetConnector';
 
 type View = 'home' | 'upload' | 'account';
 type MetricDetail = 'average' | 'today' | 'status' | null;
@@ -20,6 +21,7 @@ export function App() {
   const [planDraft, setPlanDraft] = useState<PlanSettings | null>(null);
   const pdfInput = useRef<HTMLInputElement>(null);
   const backupInput = useRef<HTMLInputElement>(null);
+  const connector = useGetConnector(setState);
 
   const refresh = useCallback(async () => {
     try {
@@ -155,6 +157,7 @@ export function App() {
         <div className="loading">Loading your private dining data…</div>
       ) : view === 'home' && !hasDiningData ? (
         <WelcomePage
+          connector={connector}
           onChoosePdf={() => pdfInput.current?.click()}
           onImportBackup={() => backupInput.current?.click()}
           pdfBusy={pdfBusy}
@@ -164,6 +167,7 @@ export function App() {
         <HomePage state={state} stats={stats} today={today} />
       ) : view === 'upload' ? (
         <UploadPage
+          connector={connector}
           onChoosePdf={() => pdfInput.current?.click()}
           onFiles={importPdfs}
           pdfBusy={pdfBusy}
@@ -211,7 +215,8 @@ export function App() {
   );
 }
 
-function WelcomePage({ onChoosePdf, onImportBackup, pdfBusy, pdfMessage }: {
+function WelcomePage({ connector, onChoosePdf, onImportBackup, pdfBusy, pdfMessage }: {
+  connector: GetConnectorModel;
   onChoosePdf: () => void;
   onImportBackup: () => void;
   pdfBusy: boolean;
@@ -222,18 +227,22 @@ function WelcomePage({ onChoosePdf, onImportBackup, pdfBusy, pdfMessage }: {
       <div className="web-welcome-copy">
         <p className="eyebrow">Dining Dollars, without giving up your login</p>
         <h1>Understand your Dining Dollars.</h1>
-        <p>Import a Cal Poly GET statement and chewmash builds your spending dashboard locally in this browser.</p>
+        <p>Connect the optional chewmash browser connector to read your authenticated GET Transaction History locally, or import a statement PDF without installing anything.</p>
         <div className="button-row web-welcome-actions">
-          <button className="primary-button" type="button" onClick={onChoosePdf} disabled={pdfBusy}>
-            {pdfBusy ? 'Reading statement…' : 'Import GET statement'}
+          <button className="primary-button" type="button" onClick={() => void connector.connect()} disabled={connector.checking || connector.busy}>
+            {connector.checking ? 'Checking connector…' : connector.busy ? 'Opening GET…' : connector.installed ? 'Sync GET' : 'Connect GET'}
+          </button>
+          <button className="secondary-button" type="button" onClick={onChoosePdf} disabled={pdfBusy}>
+            {pdfBusy ? 'Reading statement…' : 'Import statement PDF'}
           </button>
           <button className="secondary-button" type="button" onClick={onImportBackup}>Import backup</button>
         </div>
+        <ConnectorSummary connector={connector} />
         {pdfMessage ? <pre className="import-message">{pdfMessage}</pre> : null}
       </div>
       <div className="web-privacy-card">
         <strong>Private by default</strong>
-        <p>Your PDF is parsed on your device. chewmash does not ask for your Cal Poly password and this web beta has no dining-data backend.</p>
+        <p>The connector sends only parsed dining fields from extension-local storage into this website on your device. chewmash never asks for your Cal Poly password, cookies, session tokens, student ID, or raw GET page HTML.</p>
       </div>
     </div>
   );
@@ -345,14 +354,15 @@ function HomePage({ state, stats, today }: {
             <div><span>Spend used for pace</span><strong>{money(stats.paceSpend)}</strong></div>
             <div><span>{stats.status === 'under' ? 'Ahead by' : stats.status === 'over' ? 'Over by' : 'Difference'}</span><strong>{money(Math.abs(stats.paceDelta))}</strong></div>
           </div>
-          <small className="detail-source">{stats.officialSpent !== null ? 'Budget pace uses your latest official balance snapshot.' : 'Budget pace currently uses itemized purchases.'}</small>
+          <small className="detail-source">Budget pace uses itemized purchases through the same date.</small>
         </MetricDetailModal>
       ) : null}
     </div>
   );
 }
 
-function UploadPage({ onChoosePdf, onFiles, pdfBusy, pdfMessage }: {
+function UploadPage({ connector, onChoosePdf, onFiles, pdfBusy, pdfMessage }: {
+  connector: GetConnectorModel;
   onChoosePdf: () => void;
   onFiles: (files: File[]) => Promise<void>;
   pdfBusy: boolean;
@@ -362,6 +372,15 @@ function UploadPage({ onChoosePdf, onFiles, pdfBusy, pdfMessage }: {
   return (
     <div className="page-stack">
       <div className="page-title-row"><div><p className="eyebrow">Bring in dining data</p><h1>Upload</h1></div></div>
+
+      <SectionCard title="Connect GET" action={<span className="section-meta">{connector.checking ? 'Checking…' : connector.installed ? 'Connector ready' : 'Extension needed'}</span>}>
+        <p className="section-copy">Recommended: install the chewmash connector once, then use this button whenever you want fresh GET transactions. You sign into Cal Poly normally; the connector only passes parsed dining fields to this website.</p>
+        <button className="primary-button" type="button" onClick={() => void connector.connect()} disabled={connector.checking || connector.busy}>
+          {connector.checking ? 'Checking connector…' : connector.busy ? 'Opening GET…' : connector.installed ? 'Sync GET' : 'Connect GET'}
+        </button>
+        <ConnectorSummary connector={connector} />
+      </SectionCard>
+
       <SectionCard title="Import statement PDF">
         <div
           className={dragging ? 'drop-zone dragging' : 'drop-zone'}
@@ -380,14 +399,28 @@ function UploadPage({ onChoosePdf, onFiles, pdfBusy, pdfMessage }: {
           }}
         >
           <strong>{pdfBusy ? 'Reading statement…' : 'Choose PDF or drop it here'}</strong>
-          <span>The PDF is parsed locally in your browser and is not uploaded to chewmash.</span>
+          <span>Fallback path: the PDF is parsed locally in your browser and is not uploaded to chewmash.</span>
         </div>
         {pdfMessage ? <pre className="import-message">{pdfMessage}</pre> : null}
       </SectionCard>
-      <SectionCard title="Automatic GET sync">
-        <p className="section-copy">A normal website cannot inspect another signed-in website such as Cal Poly GET. The web beta therefore uses statement import; automatic GET syncing remains an optional browser-connector feature and never requires chewmash to collect your password.</p>
-        <div className="sync-summary">Website path: GET statement → local PDF parser → IndexedDB → dashboard.</div>
-      </SectionCard>
+    </div>
+  );
+}
+
+function ConnectorSummary({ connector }: { connector: GetConnectorModel }) {
+  const status = connector.syncStatus;
+  const detected = connector.installed
+    ? `Connector${connector.version ? ` v${connector.version}` : ''} detected.`
+    : connector.checking
+      ? 'Looking for the chewmash connector…'
+      : 'Connector not detected. The current Chrome beta can be installed now; Chrome Web Store distribution comes later.';
+  const lastSync = status
+    ? ` Last GET capture: ${new Date(status.capturedAt).toLocaleString()} · ${status.matchedTransactions} matched.`
+    : '';
+
+  return (
+    <div className="sync-summary">
+      {connector.message ?? `${detected}${lastSync}`}
     </div>
   );
 }
