@@ -1,69 +1,112 @@
 # ChewMash
 
-ChewMash is a privacy-first Cal Poly Dining Dollars dashboard. It tracks daily spending pace, remaining balance, spending by location, and budget status while keeping dining data on the user's device.
+ChewMash is a privacy-first Cal Poly Dining Dollars dashboard packaged as a Manifest V3 browser extension. The dashboard, GET transaction capture, budget logic, local PDF import, and local data store now live in one extension.
 
 ## Privacy model
 
-ChewMash does **not** ask for or store a Cal Poly username or password. The optional browser extension runs only on the Cal Poly GET domain and this project's GitHub Pages site. It reads structured transaction fields from the authenticated GET Transaction History page after the user signs in normally through Cal Poly.
+ChewMash does **not** ask for or store a Cal Poly username or password. Users sign into Cal Poly GET normally. On the authenticated GET Transaction History page, ChewMash reads only the structured dining fields needed for the dashboard.
 
-The extension stores only structured dining data in `chrome.storage.local`:
+Dining state is stored in `chrome.storage.local` / `browser.storage.local` on the user's device. The extension may store:
 
-- transaction date/time
+- transaction date and time
 - dining location/activity
 - transaction amount
-- available balance when visible
-- capture timestamp
+- a balance snapshot only when GET or an imported statement actually provides one
+- local capture diagnostics such as capture time and matched row count
+- Dining Dollars plan dates, away periods, and starting budget
 
-It does not store or transmit GET cookies, session tokens, credentials, student IDs, or raw page HTML. No backend database is required.
+ChewMash does not store or transmit GET cookies, session tokens, credentials, student IDs, or raw GET page HTML. There is no backend database and no account credentials are collected by ChewMash.
 
-## Repository layout
+## Current architecture
+
+```text
+Cal Poly GET
+    ↓
+WXT content script
+    ↓
+Typed local repository
+    ↓
+chrome.storage.local
+    ↓
+React dashboard
+```
+
+The current extension is built with React, TypeScript, WXT, and Manifest V3.
 
 ```text
 chewmash/
-├── index.html                 # Dashboard shell
-├── styles.css                 # Minimal Student Center-inspired UI
-├── app.js                     # Budget logic, charts, PDF import, GET sync bridge
-├── extension/
-│   ├── manifest.json          # Manifest V3 permissions
-│   ├── get-content.js         # Reads GET transaction history locally
-│   └── app-bridge.js          # Local bridge between extension storage and app
+├── entrypoints/
+│   ├── background.ts                 # Opens the full-page dashboard
+│   ├── get-history.content.ts        # Reads GET transaction history locally
+│   └── dashboard/                    # React extension dashboard
+├── src/
+│   ├── get/                          # GET parser and sync status
+│   ├── lib/                          # Budget, date, and transaction domain logic
+│   ├── pdf/                          # Local CBORD statement parser
+│   ├── storage/                      # Typed extension storage repository
+│   └── ui/                           # React UI helpers and charts
+├── extension/                        # Legacy extension kept temporarily for fallback
+├── index.html / styles.css / app.js  # Legacy GitHub Pages app kept temporarily
 ├── PRIVACY.md
-├── HANDOFF.md
-└── .gitignore
+└── HANDOFF.md
 ```
 
-## Run the dashboard
+## Development
 
-Open `index.html` directly for PDF-import testing, or enable GitHub Pages for this repository using the repository root on the `main` branch.
+Requirements: Node.js 22+ and npm.
 
-The expected Pages URL is:
+```bash
+npm install
+npm test
+npm run build
+```
 
-`https://the-diegolaredo.github.io/chewmash/`
+WXT writes the unpacked Chrome build to:
 
-## Install the GET sync extension for development
+```text
+.output/chrome-mv3/
+```
 
-1. Clone or download this repository.
-2. In Chrome or Edge, open the browser's Extensions page.
-3. Enable **Developer mode**.
-4. Choose **Load unpacked**.
-5. Select the `extension` folder.
-6. Open the ChewMash dashboard and choose **Upload → Open GET & sync**.
-7. Sign in to Cal Poly GET normally.
-8. Visit GET **Transaction History**. The extension captures only the structured dining fields.
-9. Return to ChewMash; the dashboard merges the synced purchases and balance locally.
+To run it locally, open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**, and select `.output/chrome-mv3`.
 
-PDF import remains available as a fallback and is parsed locally in the browser.
+Clicking the ChewMash toolbar icon opens the full-page React dashboard.
 
-## Current limitation
+## Easiest beta install
 
-The CBORD GET HTML structure still needs to be verified against the live authenticated Transaction History page. `get-content.js` intentionally uses a conservative table parser and may need selector adjustments after first real-world testing. No credentials are required to make those adjustments; a redacted DOM/table sample is enough.
+GitHub Actions builds an installable beta automatically. Open the latest successful **CI** run on GitHub, download the `chewmash-chrome-beta` artifact, unzip it, then use Chrome's **Load unpacked** button on that folder.
+
+This removes the need for beta testers to install Node, run npm, or understand the source-code layout. The longer-term distribution path is the Chrome Web Store so normal users receive automatic updates without Developer mode.
+
+## GET sync
+
+From ChewMash, open **Upload → Open GET and sync**. Sign into Cal Poly GET normally. When the Transaction History page loads, the WXT content script parses the table and writes deduplicated structured transactions directly into the same local extension store used by the dashboard.
+
+The GET page often does not display an authoritative account balance. In that case ChewMash stores no GET balance rather than treating a missing value as `$0`. Official statement balance snapshots remain authoritative when imported.
+
+## PDF import
+
+Cal Poly CBORD statement PDFs can be imported from the Upload view. Parsing happens locally in the browser. The parser is intentionally conservative: if a PDF does not look like a supported CBORD statement, ChewMash rejects it rather than guessing.
+
+## Budget calculations
+
+The domain layer is separate from the UI and covered by automated tests. In particular:
+
+- **Average spent** = itemized spending ÷ elapsed campus days.
+- Budget pace prefers an official balance snapshot when one exists.
+- Missing balance values remain `null` and are never coerced into `$0`.
+- Transactions imported from GET and PDFs are deduplicated.
+- Away periods are excluded from campus-day calculations.
 
 ## Security notes
 
-The extension requests only:
+The WXT extension requests only the permissions needed for the current feature set:
 
 - `storage`
+- `tabs`
 - host access to `https://get.cbord.com/calpoly/*`
-- host access to `https://the-diegolaredo.github.io/chewmash/*`
 
-There is no `<all_urls>` permission, no remote code execution, and no backend upload path. Personal statements, backups, and transaction histories should never be committed to this public repository.
+There is no `<all_urls>` permission, no remote code execution path, and no backend upload path. Personal statements, backups, and transaction histories should never be committed to this public repository.
+
+## Legacy code
+
+The old GitHub Pages dashboard and the original `extension/` implementation remain in the repository only as a fallback while the new WXT build is smoke-tested against the live authenticated GET site. They can be removed after the WXT extension has been verified end-to-end in Chrome.
