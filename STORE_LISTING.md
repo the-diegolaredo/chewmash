@@ -14,15 +14,17 @@ The chewmash connector helps Cal Poly students bring their own Dining Dollars tr
 
 After the student signs into GET normally, the connector reads structured transaction rows from the GET Transaction History page and stores those parsed dining fields locally in extension storage. When the student uses the chewmash website, a small local bridge can copy those structured fields into the website's IndexedDB so the dashboard updates.
 
+The connector can also fetch public Cal Poly menu and nutrition metadata from Dine On Campus for the website's Picks feature when the website's direct public-menu request is unavailable. Private GET transaction data and credentials are not sent to Dine On Campus.
+
 The connector does not ask for or store Cal Poly usernames or passwords, authentication cookies, SSO/session tokens, student IDs, card numbers, or raw GET page HTML. There is no chewmash backend account required and dining transaction history is not sent to a chewmash server.
 
 The chewmash website also supports local statement-PDF import as a fallback for users who do not install the connector.
 
-chewmash is an independent student project and is not an official Cal Poly or CBORD product.
+chewmash is an independent student project and is not an official Cal Poly, CBORD, or Dine On Campus product.
 
 ## Single purpose
 
-The connector's single purpose is to let a student privately copy their own structured Cal Poly GET Dining Dollars transaction data into the chewmash budgeting website on the same device.
+The connector's single purpose is to support the chewmash Dining Dollars experience on the same device: privately copy a student's structured Cal Poly GET Dining Dollars transaction data into the chewmash website and retrieve public Cal Poly dining-menu metadata used by the Picks feature.
 
 ## Permission justifications
 
@@ -38,6 +40,10 @@ Used only when the user explicitly chooses to sync from GET so the connector can
 
 Used only for the local transaction-history capture path on Cal Poly GET pages. The GET content script extracts structured dining transaction fields after the user signs in normally.
 
+### Host permission: `https://apiv4.dineoncampus.com/*`
+
+Used only to request public Cal Poly menu, meal-period, nutrition, portion, dietary-tag, and published-price metadata for the Picks feature when the website needs the connector as a browser-network fallback. No chewmash content script runs on Dine On Campus, and private GET transaction data or Cal Poly credentials are not sent there.
+
 ### chewmash website content-script matches
 
 The connector runs a small local bridge only on:
@@ -45,7 +51,7 @@ The connector runs a small local bridge only on:
 - `https://the-diegolaredo.github.io/chewmash/*`
 - `https://chewmash.app/*`
 
-That bridge supports connector detection, an explicit user-requested GET sync, and copying the already-parsed structured dining fields from extension-local storage into the website's local IndexedDB. It does not read arbitrary browsing activity or page content.
+That bridge supports connector detection, an explicit user-requested GET sync, copying the already-parsed structured dining fields from extension-local storage into the website's local IndexedDB, and dated requests for public Cal Poly menu data. It does not read arbitrary browsing activity or page content.
 
 ## Data-use disclosures
 
@@ -56,8 +62,9 @@ The connector may handle the following locally:
 - transaction amount
 - Dining Dollars balance when visible
 - local sync diagnostics such as capture time and matched row count
+- public Dine On Campus menu and nutrition metadata used by Picks
 
-The connector does not sell this data, use it for advertising, or send it to a chewmash server. See `PRIVACY.md` for the full privacy policy.
+The connector does not sell this data, use it for advertising, or send private dining transaction history to a chewmash server or to Dine On Campus. See `PRIVACY.md` for the full privacy policy.
 
 ## Suggested category
 
@@ -81,6 +88,7 @@ Use the public GitHub-rendered `PRIVACY.md` page or a dedicated static privacy-p
 
 - Confirm the connector against a live authenticated GET Transaction History session.
 - Confirm the GitHub Pages web beta detects the connector and receives a fresh capture.
+- Confirm Picks can fetch current Cal Poly public menu data through the browser connector when direct website requests fail.
 - Verify the website stores transferred dining state only in local IndexedDB.
 - Confirm generated manifest contains only intended permissions and site matches.
 - Add final extension icons and store artwork.
