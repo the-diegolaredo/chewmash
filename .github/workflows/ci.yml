@@ -27,6 +27,9 @@ jobs:
       - name: Build extension
         run: npm run build
 
+      - name: Verify generated manifest
+        run: npm run check:manifest
+
       - name: Build Chrome Web Store ZIP
         run: npm run zip
 
