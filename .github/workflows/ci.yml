@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches:
-      - react-wxt-migration
+      - main
 
 jobs:
   test-and-build:
@@ -21,8 +21,16 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run domain tests
+      - name: Run tests
         run: npm test
 
       - name: Build extension
         run: npm run build
+
+      - name: Upload Chrome beta build
+        uses: actions/upload-artifact@v4
+        with:
+          name: chewmash-chrome-beta
+          path: .output/chrome-mv3/
+          if-no-files-found: error
+          retention-days: 14
