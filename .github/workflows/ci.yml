@@ -27,10 +27,25 @@ jobs:
       - name: Build extension
         run: npm run build
 
-      - name: Upload Chrome beta build
+      - name: Verify generated manifest
+        run: npm run check:manifest
+
+      - name: Build Chrome Web Store ZIP
+        run: npm run zip
+
+      - name: Upload unpacked Chrome beta
         uses: actions/upload-artifact@v4
         with:
           name: chewmash-chrome-beta
           path: .output/chrome-mv3/
           if-no-files-found: error
           retention-days: 14
+
+      - name: Upload Chrome Web Store package
+        uses: actions/upload-artifact@v4
+        with:
+          name: chewmash-chrome-store-zip
+          path: .output/*.zip
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 30

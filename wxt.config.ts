@@ -5,7 +5,8 @@ export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   manifest: {
     name: 'ChewMash',
-    description: 'Privacy-first Cal Poly Dining Dollars dashboard.',
+    description: 'Privacy-first Dining Dollars budgeting for Cal Poly students.',
+    homepage_url: 'https://github.com/the-diegolaredo/chewmash',
     permissions: ['storage', 'tabs'],
     host_permissions: ['https://get.cbord.com/calpoly/*'],
     action: {
