@@ -100,12 +100,15 @@ export function FirstRunGate({ children }: { children: ReactNode }) {
 
   return (
     <main className={mode === 'complete' ? 'first-run-shell first-run-complete' : 'first-run-shell'}>
-      <div className="first-run-brand">chewmash</div>
       <section className="first-run-card" aria-labelledby="first-run-title">
         <div className="first-run-heading">
-          <p className="eyebrow">Welcome to chewmash</p>
-          <h1 id="first-run-title">Your everything dining app.</h1>
-          <p>Get your Dining Dollars dashboard running in a few minutes. Your Cal Poly login stays between you, your browser, and GET.</p>
+          <h1 id="first-run-title" className="first-run-wordmark">chewmash</h1>
+          <p className="first-run-tagline">Your Cal Poly dining tracker!</p>
+          <p className="first-run-intro">Connect your Dining Dollars history in a few minutes. Your Cal Poly login stays between you, your browser, and GET.</p>
+          <div className="first-run-platform-note" role="note">
+            <strong>Works best in Chrome on a computer.</strong>
+            <span>The website is mobile-friendly, but automatic GET syncing is not available on mobile yet because mobile Chrome does not support extensions.</span>
+          </div>
         </div>
 
         <div className="setup-progress" aria-label="Get started with chewmash">
