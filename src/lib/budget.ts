@@ -19,6 +19,16 @@ export function validBalanceSnapshot(
   return snapshot;
 }
 
+/**
+ * How much of today's planned Dining Dollars target remains after today's
+ * itemized purchases. A negative value means the user is over today's target.
+ * Work in cents so the UI never exposes floating-point artifacts.
+ */
+export function dailyTargetRemaining(targetPerCampusDay: number, spentToday: number): number {
+  if (!Number.isFinite(targetPerCampusDay) || !Number.isFinite(spentToday)) return 0;
+  return Math.round((targetPerCampusDay - spentToday) * 100) / 100;
+}
+
 export function calculateBudgetStats({
   settings,
   transactions,
