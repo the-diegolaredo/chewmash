@@ -1,10 +1,20 @@
 import { useEffect, useState } from 'react';
 import type { ConnectorSyncStatus } from '../../../src/connector/protocol';
-import type { GetConnectorModel } from './useGetConnector';
+import { GET_SYNC_HISTORY_EVENT, readGetSyncHistory } from './useGetConnector';
 
-export function SyncUpdatesFab({ connector }: { connector: GetConnectorModel }) {
+export function SyncUpdatesFab() {
   const [open, setOpen] = useState(false);
-  const updates = connector.syncHistory.slice(0, 4);
+  const [updates, setUpdates] = useState<ConnectorSyncStatus[]>(() => readGetSyncHistory().slice(0, 4));
+
+  useEffect(() => {
+    const refresh = () => setUpdates(readGetSyncHistory().slice(0, 4));
+    window.addEventListener(GET_SYNC_HISTORY_EVENT, refresh);
+    window.addEventListener('storage', refresh);
+    return () => {
+      window.removeEventListener(GET_SYNC_HISTORY_EVENT, refresh);
+      window.removeEventListener('storage', refresh);
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -18,26 +28,16 @@ export function SyncUpdatesFab({ connector }: { connector: GetConnectorModel }) 
   return (
     <aside className={open ? 'sync-updates-fab open' : 'sync-updates-fab'} aria-label="GET sync updates">
       <div id="sync-updates-panel" className="sync-updates-stack" aria-hidden={!open} aria-live="polite">
-        {connector.busy ? (
-          <div className="sync-update-card live">
-            <div className="sync-update-card-copy">
-              <strong>Opening GET…</strong>
-              <span>Waiting for your latest Transaction History sync.</span>
-            </div>
-            <span className="sync-update-pulse" aria-hidden="true" />
-          </div>
-        ) : null}
-
         {updates.length ? updates.map(status => (
           <SyncUpdateCard key={`${status.capturedAt}-${status.matchedTransactions}-${status.newTransactions}-${status.error ?? ''}`} status={status} />
-        )) : !connector.busy ? (
+        )) : (
           <div className="sync-update-card empty">
             <div className="sync-update-card-copy">
               <strong>No GET updates yet</strong>
               <span>Your latest syncs will appear here after you use Sync GET.</span>
             </div>
           </div>
-        ) : null}
+        )}
       </div>
 
       <button
