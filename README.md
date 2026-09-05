@@ -20,7 +20,9 @@ It does not store or transmit GET cookies, session tokens, credentials, student 
 
 ```text
 chewmash/
-├── index.html                 # Static dashboard / GitHub Pages app
+├── index.html                 # Dashboard shell
+├── styles.css                 # Minimal Student Center-inspired UI
+├── app.js                     # Budget logic, charts, PDF import, GET sync bridge
 ├── extension/
 │   ├── manifest.json          # Manifest V3 permissions
 │   ├── get-content.js         # Reads GET transaction history locally
@@ -50,7 +52,7 @@ The expected Pages URL is:
 8. Visit GET **Transaction History**. The extension captures only the structured dining fields.
 9. Return to ChewMash; the dashboard merges the synced purchases and balance locally.
 
-PDF import remains available as a fallback.
+PDF import remains available as a fallback and is parsed locally in the browser.
 
 ## Current limitation
 
@@ -64,4 +66,4 @@ The extension requests only:
 - host access to `https://get.cbord.com/calpoly/*`
 - host access to `https://the-diegolaredo.github.io/chewmash/*`
 
-There is no `<all_urls>` permission, no remote code execution, and no backend upload path.
+There is no `<all_urls>` permission, no remote code execution, and no backend upload path. Personal statements, backups, and transaction histories should never be committed to this public repository.
