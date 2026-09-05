@@ -12,6 +12,7 @@ const DEFAULT_TIMEOUT_MS = 1_200;
 export async function requestConnector(
   action: ConnectorAction,
   timeoutMs = DEFAULT_TIMEOUT_MS,
+  options: { date?: string } = {},
 ): Promise<ConnectorResponse | null> {
   const requestId = createRequestId();
   const request: ConnectorRequest = {
@@ -19,6 +20,7 @@ export async function requestConnector(
     type: 'CHEWMASH_CONNECTOR_REQUEST',
     action,
     requestId,
+    ...(options.date ? { date: options.date } : {}),
   };
 
   return await new Promise(resolve => {
