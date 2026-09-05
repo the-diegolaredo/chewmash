@@ -8,6 +8,7 @@ import './theme.css';
 import './original-layout.css';
 import './page-transitions.css';
 import './upload-polish.css';
+import './sync-updates.css';
 import { App } from './App';
 import { FirstRunGate } from './FirstRunGate';
 import { retireLegacyWebCaches } from './retireLegacyWebCaches';
