@@ -128,7 +128,8 @@ The domain layer is separate from the UI and covered by automated tests. In part
 
 - **Average spent** = itemized spending ÷ elapsed campus days.
 - **Dining Dollars left today** = planned daily target − today's itemized spending.
-- Budget pace prefers an official balance snapshot when one exists.
+- **Budget status** = expected spend by now − itemized spending through the same date.
+- Balance snapshots can still inform remaining-balance planning, but they do not override budget status.
 - Missing balance values remain `null` and are never coerced into `$0`.
 - Transactions imported from GET and PDFs are deduplicated.
 - Away periods are excluded from campus-day calculations.

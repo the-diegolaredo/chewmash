@@ -40,7 +40,7 @@ describe('calculateBudgetStats', () => {
     expect(stats.status).toBe('under');
   });
 
-  it('still treats a real zero-dollar balance as valid', () => {
+  it('keeps a real zero-dollar balance valid without letting it override itemized pace', () => {
     const stats = calculateBudgetStats({
       settings,
       transactions,
@@ -49,9 +49,38 @@ describe('calculateBudgetStats', () => {
     });
 
     expect(stats.officialBalance).toBe(0);
-    expect(stats.officialSpent).toBe(100);
-    expect(stats.paceSpend).toBe(100);
-    expect(stats.status).toBe('over');
+    expect(stats.officialSpent).toBeNull();
+    expect(stats.paceSpend).toBe(24);
+    expect(stats.status).toBe('under');
+  });
+
+  it('matches the known-good Fall 2026 budget-status example', () => {
+    const fallSettings: PlanSettings = {
+      startingBudget: 3295,
+      startDate: '2026-08-19',
+      endDate: '2026-12-18',
+      awayPeriods: [{ start: '2026-11-23', end: '2026-11-29' }],
+    };
+    const fallTransactions: DiningTransaction[] = [
+      { date: '2026-09-04', location: 'Itemized purchases', amount: 463.18 },
+    ];
+
+    const stats = calculateBudgetStats({
+      settings: fallSettings,
+      transactions: fallTransactions,
+      asOf: '2026-09-04',
+      balanceSnapshot: { date: '2026-09-04', balance: 2927.31, source: 'statement' },
+    });
+
+    expect(stats.totalCampusDays).toBe(115);
+    expect(stats.elapsedCampusDays).toBe(17);
+    expect(stats.targetPerCampusDay).toBeCloseTo(28.65217, 5);
+    expect(stats.expectedSpend).toBeCloseTo(487.08696, 5);
+    expect(stats.paceSpend).toBe(463.18);
+    expect(stats.paceDelta).toBeCloseTo(23.90696, 5);
+    expect(stats.status).toBe('under');
+    expect(stats.officialBalance).toBe(2927.31);
+    expect(stats.officialSpent).toBeNull();
   });
 
   it('ignores a balance snapshot dated after the requested as-of date', () => {
