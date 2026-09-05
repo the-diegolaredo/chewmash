@@ -1,0 +1,40 @@
+name: iOS GET sync prototype
+
+on:
+  pull_request:
+    paths:
+      - 'prototypes/mobile-get-sync/**'
+      - 'src/get/mobile-capture.js'
+      - '.github/workflows/ios-prototype.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'prototypes/mobile-get-sync/**'
+      - 'src/get/mobile-capture.js'
+      - '.github/workflows/ios-prototype.yml'
+
+jobs:
+  build-ios-prototype:
+    runs-on: macos-15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: prototypes/mobile-get-sync/ios
+        run: xcodegen generate
+
+      - name: Build for iPhone Simulator
+        working-directory: prototypes/mobile-get-sync/ios
+        run: |
+          xcodebuild \
+            -project ChewmashGetSyncPrototype.xcodeproj \
+            -scheme ChewmashGetSyncPrototype \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build
