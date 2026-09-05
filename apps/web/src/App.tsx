@@ -5,11 +5,13 @@ import { parseCbordPdfFile } from '../../../src/pdf/cbord';
 import { sanitizeState, type ChewMashState } from '../../../src/storage/state';
 import { migrateLegacyWebState, webStateRepository } from '../../../src/storage/web';
 import { DailySpendChart, PlaceSpendChart } from '../../../src/ui/charts';
-import { FloatingNav, MetricCard, MetricDetailModal, SectionCard } from '../../../src/ui/components';
+import { MetricCard, MetricDetailModal, SectionCard } from '../../../src/ui/components';
 import { humanDate, latestBalanceSnapshot, localDate, money, mostRecentDataDate, spendOnDate } from '../../../src/ui/utils';
+import { PicksPage } from './PicksPage';
 import { useGetConnector, type GetConnectorModel } from './useGetConnector';
+import { WebFloatingNav, type WebPrimaryView } from './WebFloatingNav';
 
-type View = 'home' | 'upload' | 'account';
+type View = WebPrimaryView | 'account';
 type MetricDetail = 'average' | 'today' | 'status' | null;
 
 export function App() {
@@ -146,7 +148,7 @@ export function App() {
     window.location.reload();
   }
 
-  const primaryTab = view === 'home' || view === 'upload' ? view : null;
+  const primaryTab: WebPrimaryView | null = view === 'picks' || view === 'home' || view === 'upload' ? view : null;
   const hasDiningData = Boolean(state && (state.transactions.length || state.balanceSnapshots.length));
 
   return (
@@ -172,6 +174,14 @@ export function App() {
           onImportBackup={() => backupInput.current?.click()}
           pdfBusy={pdfBusy}
           pdfMessage={pdfMessage}
+        />
+      ) : view === 'picks' ? (
+        <PicksPage
+          today={today}
+          remainingToday={dailyTargetRemaining(stats.targetPerCampusDay, spendOnDate(state.transactions, today))}
+          hasDiningData={hasDiningData}
+          connector={connector}
+          onGoHome={() => setView('home')}
         />
       ) : view === 'home' ? (
         <HomePage state={state} stats={stats} today={today} />
@@ -221,7 +231,7 @@ export function App() {
         }}
       />
 
-      <FloatingNav page={primaryTab} onChange={setView} />
+      <WebFloatingNav page={primaryTab} onChange={setView} />
     </main>
   );
 }
