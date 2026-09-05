@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import '../../../entrypoints/dashboard/style.css';
 import './web.css';
 import './polish.css';
+import '../../../src/ui/nimbus.css';
 import { App } from './App';
 import { FirstRunGate } from './FirstRunGate';
 import { SessionWelcome } from './SessionWelcome';

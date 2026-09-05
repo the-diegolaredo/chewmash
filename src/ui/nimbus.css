@@ -1,0 +1,10 @@
+@import url('https://fonts.cdnfonts.com/css/nimbus-sans-l');
+
+:root,
+body,
+button,
+input,
+textarea,
+select {
+  font-family: 'Nimbus Sans L', 'Nimbus Sans', Arial, Helvetica, sans-serif;
+}
