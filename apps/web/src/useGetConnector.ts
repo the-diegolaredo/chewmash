@@ -5,6 +5,10 @@ import { sanitizeState, type ChewMashState } from '../../../src/storage/state';
 import { webStateRepository } from '../../../src/storage/web';
 import { requestConnector, subscribeConnectorMessages } from './connector';
 
+const SYNC_HISTORY_KEY = 'chewmash:get-sync-history:v1';
+const MAX_SYNC_HISTORY = 6;
+export const GET_SYNC_HISTORY_EVENT = 'chewmash:get-sync-history';
+
 export interface GetConnectorModel {
   installed: boolean;
   checking: boolean;
@@ -12,6 +16,7 @@ export interface GetConnectorModel {
   version: string | null;
   message: string | null;
   syncStatus: ConnectorSyncStatus | null;
+  syncHistory: ConnectorSyncStatus[];
   connect: () => Promise<void>;
   fetchMenu: (date: string) => Promise<DineOnCampusMenuItem[] | null>;
 }
@@ -24,7 +29,19 @@ export function useGetConnector(
   const [busy, setBusy] = useState(false);
   const [version, setVersion] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [syncStatus, setSyncStatus] = useState<ConnectorSyncStatus | null>(null);
+  const [syncHistory, setSyncHistory] = useState<ConnectorSyncStatus[]>(() => readGetSyncHistory());
+  const [syncStatus, setSyncStatus] = useState<ConnectorSyncStatus | null>(() => readGetSyncHistory()[0] ?? null);
+
+  const rememberSyncStatus = useCallback((status: ConnectorSyncStatus) => {
+    setSyncHistory(current => {
+      const next = [
+        status,
+        ...current.filter(item => item.capturedAt !== status.capturedAt),
+      ].slice(0, MAX_SYNC_HISTORY);
+      writeSyncHistory(next);
+      return next;
+    });
+  }, []);
 
   const applySnapshot = useCallback(async (snapshot: ConnectorSnapshot) => {
     const clean = sanitizeState({
@@ -40,6 +57,7 @@ export function useGetConnector(
 
     onState(after);
     setSyncStatus(snapshot.syncStatus);
+    if (snapshot.syncStatus) rememberSyncStatus(snapshot.syncStatus);
 
     const added = Math.max(0, after.transactions.length - before.transactions.length);
     if (snapshot.syncStatus?.error) {
@@ -47,7 +65,7 @@ export function useGetConnector(
     } else if (snapshot.syncStatus) {
       setMessage(`${after.transactions.length} purchases available · ${added} newly copied to this website`);
     }
-  }, [onState]);
+  }, [onState, rememberSyncStatus]);
 
   useEffect(() => {
     const unsubscribe = subscribeConnectorMessages(message => {
@@ -145,7 +163,43 @@ export function useGetConnector(
     version,
     message,
     syncStatus,
+    syncHistory,
     connect,
     fetchMenu,
   };
+}
+
+export function readGetSyncHistory(): ConnectorSyncStatus[] {
+  if (typeof localStorage === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(SYNC_HISTORY_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(isConnectorSyncStatus).slice(0, MAX_SYNC_HISTORY);
+  } catch {
+    return [];
+  }
+}
+
+function writeSyncHistory(history: ConnectorSyncStatus[]) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(SYNC_HISTORY_KEY, JSON.stringify(history.slice(0, MAX_SYNC_HISTORY)));
+    window.dispatchEvent(new Event(GET_SYNC_HISTORY_EVENT));
+  } catch {
+    // Sync history is optional UI metadata; storage failures should not block syncing.
+  }
+}
+
+function isConnectorSyncStatus(value: unknown): value is ConnectorSyncStatus {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  return typeof record.capturedAt === 'string'
+    && typeof record.tableCount === 'number'
+    && typeof record.rowCount === 'number'
+    && typeof record.matchedTransactions === 'number'
+    && typeof record.newTransactions === 'number'
+    && typeof record.balanceFound === 'boolean'
+    && (record.error === null || typeof record.error === 'string');
 }
