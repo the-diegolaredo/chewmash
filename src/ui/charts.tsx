@@ -76,6 +76,99 @@ export function DailySpendChart({
   );
 }
 
+type BrandMark = 'panda' | 'chickfila' | 'subway' | 'jamba' | 'starbucks' | 'shakesmart';
+
+function brandForLocation(name: string): BrandMark | null {
+  const value = name.toLowerCase();
+  if (value.includes('panda express')) return 'panda';
+  if (value.includes('chick-fil-a') || value.includes('chick fil a')) return 'chickfila';
+  if (value.includes('subway')) return 'subway';
+  if (value.includes('jamba')) return 'jamba';
+  if (value.includes('starbucks')) return 'starbucks';
+  if (value.includes('shake smart')) return 'shakesmart';
+  return null;
+}
+
+function compactLabelLines(name: string): string[] {
+  const words = name.split(/\s+/).filter(Boolean);
+  if (!words.length) return ['Dining'];
+  const lines: string[] = [];
+  let current = '';
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (candidate.length <= 13 || !current) {
+      current = candidate;
+    } else {
+      lines.push(current);
+      current = word;
+    }
+    if (lines.length === 2) break;
+  }
+  if (lines.length < 2 && current) lines.push(current);
+  const used = lines.join(' ').length;
+  if (used < name.length && lines.length) {
+    const last = lines.length - 1;
+    lines[last] = `${lines[last]!.slice(0, 10)}…`;
+  }
+  return lines.slice(0, 2);
+}
+
+function DiningBrandMark({ brand, cx, cy }: { brand: BrandMark; cx: number; cy: number }) {
+  const transform = `translate(${cx - 16} ${cy - 16})`;
+  switch (brand) {
+    case 'panda':
+      return (
+        <g transform={transform} aria-hidden="true">
+          <circle cx="16" cy="16" r="15" fill="#b7282e" />
+          <circle cx="16" cy="16" r="10.2" fill="#fff" />
+          <circle cx="10.3" cy="10.2" r="3" fill="#1d2428" />
+          <circle cx="21.7" cy="10.2" r="3" fill="#1d2428" />
+          <ellipse cx="12.4" cy="15.7" rx="2.5" ry="3.2" fill="#1d2428" />
+          <ellipse cx="19.6" cy="15.7" rx="2.5" ry="3.2" fill="#1d2428" />
+          <circle cx="16" cy="20.7" r="1.6" fill="#1d2428" />
+        </g>
+      );
+    case 'chickfila':
+      return (
+        <g transform={transform} aria-hidden="true">
+          <circle cx="16" cy="16" r="15" fill="#fff" stroke="#d5233f" strokeWidth="2" />
+          <path d="M22.8 8.9c-1.7-1.5-3.7-2.2-6.1-2.2-5.3 0-9.3 4-9.3 9.4 0 5.3 4 9.2 9.2 9.2 2.2 0 4.2-.6 5.8-1.8l-2.7-3.2c-.8.5-1.8.8-2.9.8-2.8 0-4.9-2.1-4.9-5 0-2.9 2.1-5.1 4.9-5.1 1.2 0 2.2.4 3.1 1l2.9-3.1Z" fill="#d5233f" />
+          <circle cx="24.1" cy="9" r="1.5" fill="#d5233f" />
+        </g>
+      );
+    case 'subway':
+      return (
+        <g transform={transform} aria-hidden="true">
+          <rect x="1" y="5" width="30" height="22" rx="8" fill="#07883f" />
+          <path d="M8 20h10.5v-3.4l6 5.4-6 5.2v-3.3H8Z" fill="#f9d616" transform="translate(0 -4)" />
+          <path d="M24 12H13.5v3.4l-6-5.4 6-5.2v3.3H24Z" fill="#fff" transform="translate(0 4)" />
+        </g>
+      );
+    case 'jamba':
+      return (
+        <g transform={transform} aria-hidden="true">
+          <circle cx="16" cy="17" r="13.5" fill="#f28b2d" />
+          <path d="M16 10c1.6-5 5.8-7.4 10.2-6.7-1 4.7-4.5 7.5-10.2 7.9Z" fill="#4a8b45" />
+          <path d="M11 17c4.6-2.7 9.1-2.2 12 1.2-3.2 3.5-8.7 4-12 1.7Z" fill="#fff" opacity=".95" />
+        </g>
+      );
+    case 'starbucks':
+      return (
+        <g transform={transform} aria-hidden="true">
+          <circle cx="16" cy="16" r="15" fill="#00754a" />
+          <path d="m16 6 2.4 6.1 6.6.4-5.1 4.2 1.7 6.4-5.6-3.6-5.6 3.6 1.7-6.4L7 12.5l6.6-.4Z" fill="#fff" />
+        </g>
+      );
+    case 'shakesmart':
+      return (
+        <g transform={transform} aria-hidden="true">
+          <circle cx="16" cy="16" r="15" fill="#315f46" />
+          <path d="m18.6 4.8-8.3 12h5.1l-2 10.4 8.3-12h-5.1Z" fill="#fff" />
+        </g>
+      );
+  }
+}
+
 export function PlaceSpendChart({ transactions }: { transactions: DiningTransaction[] }) {
   const totals = new Map<string, number>();
   for (const transaction of transactions) {
@@ -88,16 +181,18 @@ export function PlaceSpendChart({ transactions }: { transactions: DiningTransact
 
   const total = [...totals.values()].reduce((sum, value) => sum + value, 0);
   const max = Math.max(...rows.map(([, value]) => value), 1);
-  const width = 560;
-  const height = 260;
-  const left = 18;
-  const right = 10;
+  const width = 620;
+  const height = 300;
+  const left = 22;
+  const right = 14;
   const top = 18;
-  const bottom = 74;
+  const bottom = 88;
   const innerWidth = width - left - right;
   const innerHeight = height - top - bottom;
   const slot = innerWidth / rows.length;
-  const barWidth = Math.min(42, slot * 0.6);
+  const barWidth = Math.min(46, slot * 0.58);
+  const greenShades = ['#154f3a', '#1b5a41', '#23654a', '#2d7053', '#397c5e', '#48896a', '#5b9679'];
+  const baseline = top + innerHeight;
 
   return (
     <svg className="chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Spending by dining location bar chart">
@@ -105,25 +200,29 @@ export function PlaceSpendChart({ transactions }: { transactions: DiningTransact
         const yy = top + innerHeight - innerHeight * step / 3;
         return <line key={step} className="chart-grid" x1={left} x2={width - right} y1={yy} y2={yy} />;
       })}
+      <line className="chart-grid" x1={left} x2={width - right} y1={baseline} y2={baseline} />
       {rows.map(([name, value], index) => {
         const barHeight = value / max * innerHeight;
         const x = left + slot * index + (slot - barWidth) / 2;
-        const y = top + innerHeight - barHeight;
+        const y = baseline - barHeight;
+        const centerX = x + barWidth / 2;
         const percent = total ? value / total * 100 : 0;
-        const short = name.length > 14 ? `${name.slice(0, 12)}…` : name;
+        const brand = brandForLocation(name);
+        const labelLines = compactLabelLines(name);
         return (
-          <g key={name}>
-            <rect className="chart-bar" x={x} y={y} width={barWidth} height={barHeight} rx={2}>
-              <title>{name}: {money(value)} · {percent.toFixed(1)}%</title>
-            </rect>
-            <text className="chart-axis" x={x + barWidth / 2} y={top + innerHeight + 16} textAnchor="middle">{percent.toFixed(0)}%</text>
-            <text
-              className="chart-axis"
-              transform={`translate(${x + barWidth / 2},${height - 8}) rotate(-42)`}
-              textAnchor="end"
-            >
-              {short}
-            </text>
+          <g key={name} role="img" aria-label={`${name}: ${money(value)}, ${percent.toFixed(1)} percent of itemized location spending`}>
+            <title>{name}: {money(value)} · {percent.toFixed(1)}%</title>
+            <rect x={x} y={y} width={barWidth} height={barHeight} rx={3} fill={greenShades[index % greenShades.length]} />
+            <text className="chart-axis" x={centerX} y={baseline + 17} textAnchor="middle">{percent.toFixed(0)}%</text>
+            {brand ? (
+              <DiningBrandMark brand={brand} cx={centerX} cy={baseline + 51} />
+            ) : (
+              <text className="chart-axis" x={centerX} y={baseline + 43} textAnchor="middle">
+                {labelLines.map((line, lineIndex) => (
+                  <tspan key={line} x={centerX} dy={lineIndex === 0 ? 0 : 13}>{line}</tspan>
+                ))}
+              </text>
+            )}
           </g>
         );
       })}

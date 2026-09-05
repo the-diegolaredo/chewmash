@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateBudgetStats, validBalanceSnapshot } from './budget';
+import { calculateBudgetStats, dailyTargetRemaining, validBalanceSnapshot } from './budget';
 import type { DiningTransaction, PlanSettings } from './types';
 
 const settings: PlanSettings = {
@@ -62,5 +62,15 @@ describe('calculateBudgetStats', () => {
     const stats = calculateBudgetStats({ settings, transactions: [], asOf: '2026-01-10' });
     expect(stats.totalCampusDays).toBe(8);
     expect(stats.elapsedCampusDays).toBe(8);
+  });
+});
+
+describe('dailyTargetRemaining', () => {
+  it('subtracts today\'s itemized spend from the planned daily target', () => {
+    expect(dailyTargetRemaining(28.65, 22.56)).toBe(6.09);
+  });
+
+  it('returns a negative amount when today is already over target', () => {
+    expect(dailyTargetRemaining(28.65, 31)).toBe(-2.35);
   });
 });

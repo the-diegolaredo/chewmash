@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { browser } from 'wxt/browser';
-import { calculateBudgetStats } from '../../src/lib/budget';
+import { calculateBudgetStats, dailyTargetRemaining } from '../../src/lib/budget';
 import type { PlanSettings } from '../../src/lib/types';
 import { parseCbordPdfFile } from '../../src/pdf/cbord';
 import { GET_SYNC_STATUS_KEY, readGetSyncStatus, type GetSyncStatus } from '../../src/get/status';
@@ -183,7 +183,7 @@ export function App() {
       {!state || !stats ? (
         <div className="loading">Loading your private dining data…</div>
       ) : view === 'home' ? (
-        <HomePage state={state} stats={stats} snapshot={snapshot} today={today} />
+        <HomePage state={state} stats={stats} today={today} />
       ) : view === 'upload' ? (
         <UploadPage
           syncStatus={syncStatus}
@@ -236,48 +236,48 @@ export function App() {
   );
 }
 
-function HomePage({ state, stats, snapshot, today }: {
+function HomePage({ state, stats, today }: {
   state: ChewMashState;
   stats: ReturnType<typeof calculateBudgetStats>;
-  snapshot: ReturnType<typeof latestBalanceSnapshot>;
   today: string;
 }) {
   const [detailMetric, setDetailMetric] = useState<MetricDetail>(null);
-  const [activeMetricIndex, setActiveMetricIndex] = useState(1);
+  const [activeMetricIndex, setActiveMetricIndex] = useState(0);
   const metricStripRef = useRef<HTMLDivElement>(null);
   const spentToday = spendOnDate(state.transactions, today);
-  const remainingBalance = stats.officialBalance ?? Math.max(0, state.plan.startingBudget - stats.itemizedSpent);
+  const dollarsLeftToday = dailyTargetRemaining(stats.targetPerCampusDay, spentToday);
   const dataThrough = mostRecentDataDate(state.transactions, state.balanceSnapshots);
   const statusTitle = stats.status === 'under' ? 'Under budget' : stats.status === 'over' ? 'Over budget' : 'On budget';
   const statusNote = stats.status === 'on'
     ? 'Your spending is close to the planned pace.'
     : `${money(Math.abs(stats.paceDelta))} ${stats.status === 'under' ? 'ahead of' : 'beyond'} your planned pace.`;
+  const todayNote = dollarsLeftToday >= 0
+    ? `${money(spentToday)} spent of ${money(stats.targetPerCampusDay)} target`
+    : `${money(Math.abs(dollarsLeftToday))} over today's target`;
 
   const centerMetric = useCallback((index: number, behavior: ScrollBehavior = 'smooth') => {
     const strip = metricStripRef.current;
     const card = strip?.children[index] as HTMLElement | undefined;
     if (!strip || !card) return;
-    strip.scrollTo({
-      left: card.offsetLeft - (strip.clientWidth - card.clientWidth) / 2,
-      behavior,
-    });
+    card.scrollIntoView({ behavior, block: 'nearest', inline: 'center' });
     setActiveMetricIndex(index);
   }, []);
 
   useEffect(() => {
-    const frame = window.requestAnimationFrame(() => centerMetric(1, 'auto'));
+    const frame = window.requestAnimationFrame(() => centerMetric(0, 'auto'));
     return () => window.cancelAnimationFrame(frame);
   }, [centerMetric]);
 
   const onCarouselScroll = useCallback(() => {
     const strip = metricStripRef.current;
     if (!strip) return;
-    const viewportCenter = strip.scrollLeft + strip.clientWidth / 2;
+    const stripRect = strip.getBoundingClientRect();
+    const viewportCenter = stripRect.left + stripRect.width / 2;
     let closestIndex = 0;
     let closestDistance = Number.POSITIVE_INFINITY;
     Array.from(strip.children).forEach((child, index) => {
-      const card = child as HTMLElement;
-      const cardCenter = card.offsetLeft + card.clientWidth / 2;
+      const rect = (child as HTMLElement).getBoundingClientRect();
+      const cardCenter = rect.left + rect.width / 2;
       const distance = Math.abs(cardCenter - viewportCenter);
       if (distance < closestDistance) {
         closestDistance = distance;
@@ -302,12 +302,14 @@ function HomePage({ state, stats, snapshot, today }: {
             label="Daily average"
             value={money(stats.averageSpentPerCampusDay)}
             note={<>Target <strong>{money(stats.targetPerCampusDay)}</strong> per campus day</>}
+            active={activeMetricIndex === 0}
             onOpen={() => setDetailMetric('average')}
           />
           <MetricCard
             label="Dining Dollars left today"
-            value={money(stats.safePerRemainingDay)}
-            note={<>Safe amount with <strong>{stats.remainingCampusDays}</strong> campus days remaining</>}
+            value={money(dollarsLeftToday)}
+            note={todayNote}
+            active={activeMetricIndex === 1}
             onOpen={() => setDetailMetric('today')}
           />
           <MetricCard
@@ -315,6 +317,7 @@ function HomePage({ state, stats, snapshot, today }: {
             value={statusTitle}
             note={statusNote}
             tone={stats.status}
+            active={activeMetricIndex === 2}
             onOpen={() => setDetailMetric('status')}
           />
         </div>
@@ -352,14 +355,14 @@ function HomePage({ state, stats, snapshot, today }: {
       ) : null}
 
       {detailMetric === 'today' ? (
-        <MetricDetailModal title="Dining Dollars left today" value={money(stats.safePerRemainingDay)} onClose={() => setDetailMetric(null)}>
-          <p>This is the amount you can spend from here today while still spreading your remaining Dining Dollars evenly across the campus days left in the plan.</p>
+        <MetricDetailModal title="Dining Dollars left today" value={money(dollarsLeftToday)} onClose={() => setDetailMetric(null)}>
+          <p>This is today's planned Dining Dollars target minus the itemized purchases you've made today.</p>
           <div className="detail-grid">
+            <div><span>Daily target</span><strong>{money(stats.targetPerCampusDay)}</strong></div>
             <div><span>Spent today</span><strong>{money(spentToday)}</strong></div>
-            <div><span>Remaining balance</span><strong>{money(remainingBalance)}</strong></div>
-            <div><span>Campus days remaining</span><strong>{stats.remainingCampusDays}</strong></div>
+            <div><span>{dollarsLeftToday >= 0 ? 'Left today' : 'Over target'}</span><strong>{money(dollarsLeftToday >= 0 ? dollarsLeftToday : Math.abs(dollarsLeftToday))}</strong></div>
           </div>
-          <small className="detail-source">{snapshot ? `Balance source: official snapshot from ${humanDate(snapshot.date)}.` : 'Balance is estimated from itemized purchases because no official balance snapshot is available.'}</small>
+          <small className="detail-source">Only purchases dated {humanDate(today)} are subtracted from today's target.</small>
         </MetricDetailModal>
       ) : null}
 
