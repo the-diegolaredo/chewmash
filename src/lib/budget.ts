@@ -52,9 +52,12 @@ export function calculateBudgetStats({
 
   const snapshot = validBalanceSnapshot(balanceSnapshot, clampedAsOf);
   const officialBalance = snapshot?.balance ?? null;
-  const officialSpent = officialBalance === null
-    ? null
-    : Math.max(0, settings.startingBudget - officialBalance);
+
+  // `officialSpent` used to double as a signal that budget pace came from a
+  // balance snapshot. Budget pace is itemized-only again, so keep this legacy
+  // pace-source field null while preserving the official balance itself for
+  // remaining-balance planning.
+  const officialSpent = null;
 
   // Budget status compares what the plan expected to be spent by now with the
   // itemized purchases through the same date. Balance snapshots remain useful
