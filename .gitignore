@@ -1,6 +1,6 @@
 .DS_Store
 Thumbs.db
 *.pdf
-*.json
+chewmash-backup*.json
 backups/
 private/
