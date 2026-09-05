@@ -1,11 +1,14 @@
 {
   "name": "chewmash",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "wxt",
+    "dev:web": "vite --config apps/web/vite.config.ts",
     "build": "wxt build",
+    "build:web": "vite build --config apps/web/vite.config.ts",
+    "preview:web": "vite preview --config apps/web/vite.config.ts",
     "zip": "wxt zip",
     "prepare": "wxt prepare",
     "test": "vitest run",
@@ -19,8 +22,10 @@
   "devDependencies": {
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^4.3.4",
     "@wxt-dev/module-react": "^1.2.2",
     "typescript": "^5.9.0",
+    "vite": "^6.1.0",
     "vitest": "^3.2.4",
     "wxt": "^0.21.4"
   }
