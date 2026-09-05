@@ -8,11 +8,13 @@ import { stateRepository } from '../../src/storage/extension';
 import { STORAGE_KEY } from '../../src/storage/repository';
 import { sanitizeState, type ChewMashState } from '../../src/storage/state';
 import { DailySpendChart, PlaceSpendChart } from '../../src/ui/charts';
-import { FloatingNav, MetricCard, SectionCard } from '../../src/ui/components';
+import { FloatingNav, MetricCard, MetricDetailModal, SectionCard } from '../../src/ui/components';
 import { humanDate, latestBalanceSnapshot, localDate, money, mostRecentDataDate, spendOnDate } from '../../src/ui/utils';
 
 const GET_HISTORY_URL = 'https://get.cbord.com/calpoly/full/history.php';
 type View = 'home' | 'upload' | 'account';
+
+type MetricDetail = 'average' | 'today' | 'status' | null;
 
 export function App() {
   const [state, setState] = useState<ChewMashState | null>(null);
@@ -240,6 +242,9 @@ function HomePage({ state, stats, snapshot, today }: {
   snapshot: ReturnType<typeof latestBalanceSnapshot>;
   today: string;
 }) {
+  const [detailMetric, setDetailMetric] = useState<MetricDetail>(null);
+  const [activeMetricIndex, setActiveMetricIndex] = useState(1);
+  const metricStripRef = useRef<HTMLDivElement>(null);
   const spentToday = spendOnDate(state.transactions, today);
   const remainingBalance = stats.officialBalance ?? Math.max(0, state.plan.startingBudget - stats.itemizedSpent);
   const dataThrough = mostRecentDataDate(state.transactions, state.balanceSnapshots);
@@ -248,44 +253,127 @@ function HomePage({ state, stats, snapshot, today }: {
     ? 'Your spending is close to the planned pace.'
     : `${money(Math.abs(stats.paceDelta))} ${stats.status === 'under' ? 'ahead of' : 'beyond'} your planned pace.`;
 
+  const centerMetric = useCallback((index: number, behavior: ScrollBehavior = 'smooth') => {
+    const strip = metricStripRef.current;
+    const card = strip?.children[index] as HTMLElement | undefined;
+    if (!strip || !card) return;
+    strip.scrollTo({
+      left: card.offsetLeft - (strip.clientWidth - card.clientWidth) / 2,
+      behavior,
+    });
+    setActiveMetricIndex(index);
+  }, []);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => centerMetric(1, 'auto'));
+    return () => window.cancelAnimationFrame(frame);
+  }, [centerMetric]);
+
+  const onCarouselScroll = useCallback(() => {
+    const strip = metricStripRef.current;
+    if (!strip) return;
+    const viewportCenter = strip.scrollLeft + strip.clientWidth / 2;
+    let closestIndex = 0;
+    let closestDistance = Number.POSITIVE_INFINITY;
+    Array.from(strip.children).forEach((child, index) => {
+      const card = child as HTMLElement;
+      const cardCenter = card.offsetLeft + card.clientWidth / 2;
+      const distance = Math.abs(cardCenter - viewportCenter);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestIndex = index;
+      }
+    });
+    setActiveMetricIndex(closestIndex);
+  }, []);
+
   return (
-    <div className="page-stack">
-      <div className="page-title-row">
-        <div>
-          <p className="eyebrow">Fall 2026 Dining Dollars</p>
-          <h1>Home</h1>
-          <p className="subtle">{dataThrough ? `Updated through ${humanDate(String(dataThrough))}` : 'No dining data imported yet'}</p>
+    <div className="page-stack home-page">
+      <div className="home-heading">
+        <p className="eyebrow">Dining Dollars</p>
+        <h1>Fall 2026 Dining</h1>
+        <p className="subtle">{dataThrough ? `Updated through ${humanDate(String(dataThrough))}` : 'No dining data imported yet'}</p>
+      </div>
+
+      <section className="metrics-carousel" aria-label="Dining overview">
+        <p className="carousel-hint">Swipe or scroll through your main stats. Tap a card for details.</p>
+        <div className="metric-strip" ref={metricStripRef} onScroll={onCarouselScroll}>
+          <MetricCard
+            label="Daily average"
+            value={money(stats.averageSpentPerCampusDay)}
+            note={<>Target <strong>{money(stats.targetPerCampusDay)}</strong> per campus day</>}
+            onOpen={() => setDetailMetric('average')}
+          />
+          <MetricCard
+            label="Dining Dollars left today"
+            value={money(stats.safePerRemainingDay)}
+            note={<>Safe amount with <strong>{stats.remainingCampusDays}</strong> campus days remaining</>}
+            onOpen={() => setDetailMetric('today')}
+          />
+          <MetricCard
+            label="Budget status"
+            value={statusTitle}
+            note={statusNote}
+            tone={stats.status}
+            onOpen={() => setDetailMetric('status')}
+          />
         </div>
-      </div>
-
-      <div className="metric-strip" aria-label="Budget summary">
-        <MetricCard
-          label="Average spent"
-          value={money(stats.averageSpentPerCampusDay)}
-          note={<>Target: <strong>{money(stats.targetPerCampusDay)}</strong> per campus day</>}
-        />
-        <MetricCard
-          label="Spent today"
-          value={money(spentToday)}
-          note={`${humanDate(today)} · itemized purchases`}
-        />
-        <MetricCard label="Budget status" value={statusTitle} note={statusNote} tone={stats.status} />
-      </div>
-
-      <section className="plan-grid" aria-label="Plan totals">
-        <div><span>Remaining balance</span><strong>{money(remainingBalance)}</strong><small>{snapshot ? `Official snapshot · ${humanDate(snapshot.date)}` : 'Calculated from itemized purchases'}</small></div>
-        <div><span>Daily target</span><strong>{money(stats.targetPerCampusDay)}</strong><small>{stats.totalCampusDays} campus days in plan</small></div>
-        <div><span>Safe per remaining day</span><strong>{money(stats.safePerRemainingDay)}</strong><small>{stats.remainingCampusDays} campus days remaining</small></div>
-        <div><span>Spent so far</span><strong>{money(stats.paceSpend)}</strong><small>{stats.officialSpent !== null ? 'Based on official balance' : 'Based on itemized purchases'}</small></div>
+        <div className="carousel-dots" aria-label="Carousel pages">
+          {['Daily average', 'Dining Dollars left today', 'Budget status'].map((label, index) => (
+            <button
+              key={label}
+              type="button"
+              className={activeMetricIndex === index ? 'carousel-dot active' : 'carousel-dot'}
+              aria-label={`Show ${label}`}
+              aria-current={activeMetricIndex === index ? 'true' : undefined}
+              onClick={() => centerMetric(index)}
+            />
+          ))}
+        </div>
       </section>
 
-      <SectionCard title="Spending by day">
+      <SectionCard title="Spending by day" action={<span className="section-meta">Dots show each campus day</span>}>
         <DailySpendChart transactions={state.transactions} settings={state.plan} asOf={today} target={stats.targetPerCampusDay} />
       </SectionCard>
 
       <SectionCard title="Dining locations">
         <PlaceSpendChart transactions={state.transactions} />
       </SectionCard>
+
+      {detailMetric === 'average' ? (
+        <MetricDetailModal title="Daily average" value={money(stats.averageSpentPerCampusDay)} onClose={() => setDetailMetric(null)}>
+          <p>Your daily average is based on itemized Dining Dollars purchases across elapsed campus days.</p>
+          <div className="detail-grid">
+            <div><span>Planned daily target</span><strong>{money(stats.targetPerCampusDay)}</strong></div>
+            <div><span>Itemized spent so far</span><strong>{money(stats.itemizedSpent)}</strong></div>
+            <div><span>Campus days elapsed</span><strong>{stats.elapsedCampusDays}</strong></div>
+          </div>
+        </MetricDetailModal>
+      ) : null}
+
+      {detailMetric === 'today' ? (
+        <MetricDetailModal title="Dining Dollars left today" value={money(stats.safePerRemainingDay)} onClose={() => setDetailMetric(null)}>
+          <p>This is the amount you can spend from here today while still spreading your remaining Dining Dollars evenly across the campus days left in the plan.</p>
+          <div className="detail-grid">
+            <div><span>Spent today</span><strong>{money(spentToday)}</strong></div>
+            <div><span>Remaining balance</span><strong>{money(remainingBalance)}</strong></div>
+            <div><span>Campus days remaining</span><strong>{stats.remainingCampusDays}</strong></div>
+          </div>
+          <small className="detail-source">{snapshot ? `Balance source: official snapshot from ${humanDate(snapshot.date)}.` : 'Balance is estimated from itemized purchases because no official balance snapshot is available.'}</small>
+        </MetricDetailModal>
+      ) : null}
+
+      {detailMetric === 'status' ? (
+        <MetricDetailModal title="Budget status" value={statusTitle} tone={stats.status} onClose={() => setDetailMetric(null)}>
+          <p>{statusNote}</p>
+          <div className="detail-grid">
+            <div><span>Expected spend by now</span><strong>{money(stats.expectedSpend)}</strong></div>
+            <div><span>Spend used for pace</span><strong>{money(stats.paceSpend)}</strong></div>
+            <div><span>{stats.status === 'under' ? 'Ahead by' : stats.status === 'over' ? 'Over by' : 'Difference'}</span><strong>{money(Math.abs(stats.paceDelta))}</strong></div>
+          </div>
+          <small className="detail-source">{stats.officialSpent !== null ? 'Budget pace uses your latest official balance snapshot.' : 'Budget pace currently uses itemized purchases.'}</small>
+        </MetricDetailModal>
+      ) : null}
     </div>
   );
 }

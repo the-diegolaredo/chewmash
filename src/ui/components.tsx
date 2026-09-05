@@ -1,22 +1,68 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 
 export function MetricCard({
   label,
   value,
   note,
   tone = 'neutral',
+  active = false,
+  onOpen,
 }: {
   label: string;
   value: string;
   note: ReactNode;
   tone?: 'neutral' | 'under' | 'on' | 'over';
+  active?: boolean;
+  onOpen?: () => void;
 }) {
   return (
-    <article className={`metric-card metric-${tone}`}>
+    <button
+      className={`metric-card metric-${tone}${active ? ' active' : ''}`}
+      type="button"
+      onClick={onOpen}
+      aria-label={`${label}: ${value}. Open details.`}
+    >
       <span className="metric-label">{label}</span>
       <strong className="metric-value">{value}</strong>
-      <div className="metric-note">{note}</div>
-    </article>
+      <span className="metric-note">{note}</span>
+      <span className="metric-more">View details <span aria-hidden="true">→</span></span>
+    </button>
+  );
+}
+
+export function MetricDetailModal({
+  title,
+  value,
+  tone = 'neutral',
+  onClose,
+  children,
+}: {
+  title: string;
+  value: string;
+  tone?: 'neutral' | 'under' | 'on' | 'over';
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
+  return (
+    <div className="metric-modal-backdrop" role="presentation" onMouseDown={event => {
+      if (event.target === event.currentTarget) onClose();
+    }}>
+      <section className={`metric-modal metric-modal-${tone}`} role="dialog" aria-modal="true" aria-labelledby="metric-modal-title">
+        <button className="metric-modal-close" type="button" onClick={onClose} aria-label="Close details">×</button>
+        <span className="metric-modal-kicker">Dining detail</span>
+        <h2 id="metric-modal-title">{title}</h2>
+        <strong className="metric-modal-value">{value}</strong>
+        <div className="metric-modal-body">{children}</div>
+      </section>
+    </div>
   );
 }
 
