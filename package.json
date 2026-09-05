@@ -9,6 +9,7 @@
     "zip": "wxt zip",
     "prepare": "wxt prepare",
     "test": "vitest run",
+    "check:manifest": "node scripts/check-manifest.mjs",
     "test:watch": "vitest"
   },
   "dependencies": {
