@@ -54,7 +54,7 @@ export function PicksPage({
   }, [load]);
 
   const ranked = useMemo(
-    () => rankMenuPicks(menu?.items ?? [], { remainingToday, mealPeriod, limit: 8 }),
+    () => rankMenuPicks(menu?.items ?? [], { remainingToday, mealPeriod, limit: 12 }),
     [mealPeriod, menu?.items, remainingToday],
   );
   const allRanked = useMemo(
@@ -102,7 +102,6 @@ export function PicksPage({
       <div className="picks-heading">
         <p className="eyebrow">Picks</p>
         <h1>What sounds good?</h1>
-        <p className="subtle">{mealLabel} ideas for {money(remainingToday)} left today.</p>
       </div>
 
       <div className="picks-summary-row">
@@ -110,7 +109,7 @@ export function PicksPage({
           <span>Left today</span>
           <strong>{money(remainingToday)}</strong>
         </div>
-        <div className="picks-summary-card">
+        <div className="picks-summary-card picks-now-card">
           <span>Right now</span>
           <strong>{mealLabel}</strong>
         </div>
@@ -123,7 +122,7 @@ export function PicksPage({
           <p>{surprisePreview ? `${surprisePreview.item.name} · ${surprisePreview.item.location}` : 'Shuffle the best-fitting menu options and land on one.'}</p>
         </div>
         <button className="surprise-button" type="button" disabled={loading || spinning || !allRanked.length} onClick={() => void surprise()}>
-          <span aria-hidden="true">🎲</span>
+          {!surpriseResult && !spinning ? <span aria-hidden="true">🎲</span> : null}
           {spinning ? 'Shuffling…' : surpriseResult ? 'Spin again' : 'Surprise me'}
         </button>
         <div className={spinning ? 'surprise-slot spinning' : 'surprise-slot'} aria-live="polite">

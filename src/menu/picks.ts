@@ -42,19 +42,27 @@ export function rankMenuPicks(
 
   const selected: RankedPick[] = [];
   const locationCounts = new Map<string, number>();
+  let drinkCount = 0;
+
+  const canAdd = (pick: RankedPick) => !isDrinkLike(pick.item) || drinkCount < 2;
+  const add = (pick: RankedPick) => {
+    selected.push(pick);
+    locationCounts.set(pick.item.location, (locationCounts.get(pick.item.location) ?? 0) + 1);
+    if (isDrinkLike(pick.item)) drinkCount += 1;
+  };
 
   for (const pick of unique) {
+    if (!canAdd(pick)) continue;
     const count = locationCounts.get(pick.item.location) ?? 0;
     if (count >= 2 && unique.length > limit) continue;
-    selected.push(pick);
-    locationCounts.set(pick.item.location, count + 1);
+    add(pick);
     if (selected.length >= limit) break;
   }
 
   if (selected.length < limit) {
     for (const pick of unique) {
-      if (selected.includes(pick)) continue;
-      selected.push(pick);
+      if (selected.includes(pick) || !canAdd(pick)) continue;
+      add(pick);
       if (selected.length >= limit) break;
     }
   }
@@ -123,7 +131,7 @@ function scoreItem(
 
   const lowerStation = (item.station ?? '').toLowerCase();
   if (/topping|condiment|sauce|ingredient|add[- ]?on/.test(lowerStation)) score -= 45;
-  if (/coffee|beverage|drink/.test(lowerStation)) score -= 12;
+  if (isDrinkLike(item)) score -= 12;
 
   return {
     item,
@@ -140,6 +148,14 @@ function isMealLike(item: DineOnCampusMenuItem): boolean {
   const station = (item.station ?? '').toLowerCase();
   if (/^ingredients?$/.test(station)) return false;
   return true;
+}
+
+function isDrinkLike(item: DineOnCampusMenuItem): boolean {
+  const station = (item.station ?? '').toLowerCase();
+  const name = item.name.toLowerCase();
+
+  if (/coffee|beverage|drink|smoothie|juice|tea|espresso|latte|cappuccino|fountain|boba/.test(station)) return true;
+  return /\b(coffee|tea|latte|mocha|cappuccino|espresso|smoothie|juice|lemonade|soda|cola|coke|pepsi|sprite|root beer|energy drink|boba|milkshake|shake)\b/.test(name);
 }
 
 function dedupeByNameAndLocation(items: DineOnCampusMenuItem[]): DineOnCampusMenuItem[] {

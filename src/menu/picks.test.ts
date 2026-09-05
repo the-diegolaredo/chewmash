@@ -49,6 +49,34 @@ describe('Picks recommendation engine', () => {
     expect(picks[0]?.fitsBudget).toBeNull();
   });
 
+  it('keeps drink suggestions to at most two when food options are available', () => {
+    const foods = Array.from({ length: 12 }, (_, index) => item({
+      id: `food-${index}`,
+      name: `Lunch Plate ${index + 1}`,
+      location: `Food Spot ${index % 6}`,
+      station: 'Kitchen',
+      period: 'lunch',
+      price: 9,
+      calories: 550,
+    }));
+    const drinks = Array.from({ length: 6 }, (_, index) => item({
+      id: `drink-${index}`,
+      name: `Iced Tea ${index + 1}`,
+      location: `Drink Spot ${index}`,
+      station: 'Beverages',
+      period: 'lunch',
+      price: 4,
+      calories: 180,
+    }));
+
+    const picks = rankMenuPicks([...drinks, ...foods], { remainingToday: 20, mealPeriod: 'lunch', limit: 12 });
+    const drinkPicks = picks.filter(pick => pick.item.station === 'Beverages');
+
+    expect(picks).toHaveLength(12);
+    expect(drinkPicks.length).toBeLessThanOrEqual(2);
+    expect(picks.length - drinkPicks.length).toBeGreaterThanOrEqual(10);
+  });
+
   it('keeps surprise choices inside the affordable relevant pool when possible', () => {
     const picks = rankMenuPicks([
       item({ id: 'a', name: 'Fits Lunch', period: 'lunch', price: 8 }),
