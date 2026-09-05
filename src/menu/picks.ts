@@ -44,7 +44,9 @@ export function rankMenuPicks(
   const locationCounts = new Map<string, number>();
   let drinkCount = 0;
 
-  const canAdd = (pick: RankedPick) => !isDrinkLike(pick.item) || drinkCount < 2;
+  // Picks should read like a meal list, not a coffee menu. Keep a single drink
+  // slot available for variety, but only after solid food has competed on score.
+  const canAdd = (pick: RankedPick) => !isDrinkLike(pick.item) || drinkCount < 1;
   const add = (pick: RankedPick) => {
     selected.push(pick);
     locationCounts.set(pick.item.location, (locationCounts.get(pick.item.location) ?? 0) + 1);
@@ -131,7 +133,13 @@ function scoreItem(
 
   const lowerStation = (item.station ?? '').toLowerCase();
   if (/topping|condiment|sauce|ingredient|add[- ]?on/.test(lowerStation)) score -= 45;
-  if (isDrinkLike(item)) score -= 12;
+
+  if (isDrinkLike(item)) {
+    score -= 80;
+  } else {
+    score += solidFoodScore(item);
+    score += preferredDiningScore(item);
+  }
 
   return {
     item,
@@ -153,9 +161,40 @@ function isMealLike(item: DineOnCampusMenuItem): boolean {
 function isDrinkLike(item: DineOnCampusMenuItem): boolean {
   const station = (item.station ?? '').toLowerCase();
   const name = item.name.toLowerCase();
+  const description = (item.description ?? '').toLowerCase();
+  const haystack = `${name} ${station} ${description}`;
 
-  if (/coffee|beverage|drink|smoothie|juice|tea|espresso|latte|cappuccino|fountain|boba/.test(station)) return true;
-  return /\b(coffee|tea|latte|mocha|cappuccino|espresso|smoothie|juice|lemonade|soda|cola|coke|pepsi|sprite|root beer|energy drink|boba|milkshake|shake)\b/.test(name);
+  return /\b(coffee|beverage|drink|smoothie|juice|tea|espresso|latte|mocha|cappuccino|frappuccino|refresher|cold brew|americano|macchiato|lemonade|soda|cola|coke|pepsi|sprite|root beer|energy drink|boba|milkshake|protein shake|hot chocolate|chocolate milk|water)\b/.test(haystack);
+}
+
+function solidFoodScore(item: DineOnCampusMenuItem): number {
+  const haystack = `${item.name} ${item.station ?? ''} ${item.description ?? ''}`.toLowerCase();
+  let score = 0;
+
+  if (/\b(bowl|plate|platter|burger|sandwich|wrap|burrito|taco|quesadilla|pizza|pasta|noodle|rice|chicken|beef|pork|turkey|salmon|tuna|poke|salad|soup|toast|bagel|egg|omelet|fries|tenders|wings|sushi|roll|gyro|falafel|steak|meal|entree|entrée)\b/.test(haystack)) {
+    score += 18;
+  }
+  if (item.calories !== null && item.calories >= 250) score += 5;
+
+  return score;
+}
+
+function preferredDiningScore(item: DineOnCampusMenuItem): number {
+  const venue = `${item.location} ${item.station ?? ''}`.toLowerCase();
+
+  // Favor the places students are most likely to look to for an actual meal:
+  // Vista Grande, 1901 Marketplace, and the major fast-food counters.
+  if (/vista grande|\bvg\b|1901|panda express|chick[- ]?fil[- ]?a|subway|taco bell|einstein|kai poke|pom\s*&\s*honey|red radish|poly choice/.test(venue)) {
+    return 24;
+  }
+
+  // Vista Grande station names can arrive as the location label in Dine On
+  // Campus, so give its recognizable solid-food concepts a smaller bump too.
+  if (/mingle\s*\+\s*nosh|noodles|hearth|streats|brunch|balance/.test(venue)) {
+    return 12;
+  }
+
+  return 0;
 }
 
 function dedupeByNameAndLocation(items: DineOnCampusMenuItem[]): DineOnCampusMenuItem[] {
