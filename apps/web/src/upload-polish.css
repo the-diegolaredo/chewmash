@@ -1,0 +1,15 @@
+/* Upload page finishing touches. The drop zone uniquely identifies this page. */
+.page-stack:has(.drop-zone) > .page-title-row {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.page-stack:has(.drop-zone) > .page-title-row > div {
+  width: 100%;
+}
+
+/* Keep the bright gradient button, but give its label stronger contrast. */
+.page-stack:has(.drop-zone) .primary-button {
+  color: #fff;
+}
