@@ -2,7 +2,7 @@
 
 chewmash is a privacy-first Cal Poly Dining Dollars dashboard. It is designed so Cal Poly authentication remains between the user, the browser, and Cal Poly/CBORD.
 
-chewmash currently has a public website and an optional browser-extension path. Neither path requires a chewmash account.
+chewmash currently has a public website and an optional browser connector. Neither path requires a chewmash account.
 
 ## Data chewmash reads
 
@@ -10,14 +10,18 @@ chewmash currently has a public website and an optional browser-extension path. 
 
 Users may choose to import Cal Poly CBORD statement PDFs. PDF parsing happens locally in the browser. The website reads only the structured dining information needed to build the dashboard from those files.
 
-### Browser extension
+When the optional chewmash connector is installed, the website can also receive structured dining data from that extension on the same device. The connector does not give the website Cal Poly credentials, authentication cookies, session tokens, or raw GET HTML.
 
-When the user opens the authenticated Cal Poly GET Transaction History page, the chewmash extension may read only the structured dining information needed for the dashboard:
+### Browser connector
+
+When the user opens the authenticated Cal Poly GET Transaction History page, the chewmash connector may read only the structured dining information needed for the dashboard:
 
 - transaction date and time
 - dining location / activity
 - transaction amount
 - visible Dining Dollars balance, when the page actually provides one
+
+The connector also runs a small bridge only on the chewmash website so the user can detect the connector, open GET, and copy structured dining data from extension-local storage into the website's local IndexedDB.
 
 ## Data chewmash stores
 
@@ -32,11 +36,11 @@ The public web app stores its application state locally in browser IndexedDB on 
 
 The website may also copy the original GitHub Pages prototype's `chewmash:v1` localStorage state into the new typed IndexedDB repository when both versions run on the same origin. The old value is not deleted by that migration.
 
-### Browser extension
+### Browser connector
 
-The extension stores its application data locally in extension storage (`chrome.storage.local` / `browser.storage.local`). It may additionally store local GET capture diagnostics such as capture time, row count, and number of matched transactions.
+The connector stores its application data locally in extension storage (`chrome.storage.local` / `browser.storage.local`). It may additionally store local GET capture diagnostics such as capture time, row count, and number of matched transactions.
 
-The current chewmash web beta and extension do not require a backend database for dining history.
+The current chewmash web beta and connector do not require a backend database for dining history.
 
 ## Data chewmash does not intentionally collect or store
 
@@ -48,7 +52,7 @@ chewmash does not intentionally collect or store:
 - student IDs or card numbers
 - raw GET page HTML
 - general browser history
-- browsing activity outside the explicitly permitted Cal Poly GET pages used by the extension
+- browsing activity outside the explicitly permitted Cal Poly GET and chewmash website pages used by the connector
 
 chewmash does not sell dining data, use dining data for advertising, or transmit dining transaction history to GitHub.
 
@@ -56,13 +60,18 @@ chewmash does not sell dining data, use dining data for advertising, or transmit
 
 The public web app is delivered as static application files. Imported statement contents and the resulting structured dining history are processed and stored locally in the browser.
 
-The optional browser extension requests host access only to:
+The optional browser connector requests host permission only to:
 
 `https://get.cbord.com/calpoly/*`
 
-This permission is used to read the authenticated GET Transaction History page after the user signs in normally. The extension also requests storage and tab permissions used to save data locally and open or refresh the GET transaction-history tab from the dashboard.
+This permission is used to read the authenticated GET Transaction History page after the user signs in normally. The connector also requests storage and tab permissions used to save data locally and open or refresh the GET transaction-history tab when the user chooses to sync.
 
-There is no `<all_urls>` permission and no remote-code execution path.
+The connector content scripts are restricted to the Cal Poly GET pages above plus the chewmash website origins used for the local page-to-extension bridge:
+
+- `https://the-diegolaredo.github.io/chewmash/*`
+- `https://chewmash.app/*`
+
+The chewmash website bridge accepts only a small allowlisted message protocol for connector detection, local-state copying, and opening GET. There is no `<all_urls>` permission and no remote-code execution path.
 
 ## Data control
 
