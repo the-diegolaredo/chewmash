@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { campusDates } from '../lib/dates';
 import { dailyTotals, normalizeLocation } from '../lib/transactions';
 import type { DiningTransaction, IsoDate, PlanSettings } from '../lib/types';
@@ -12,6 +13,84 @@ function shortDate(value: string): string {
   return new Date(year, month - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+function fullDate(value: string): string {
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) return value;
+  return new Date(year, month - 1, day).toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+function DaySpendModal({
+  date,
+  transactions,
+  onClose,
+}: {
+  date: IsoDate;
+  transactions: DiningTransaction[];
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
+  const byLocation = new Map<string, number>();
+  for (const transaction of transactions) {
+    if (transaction.date !== date) continue;
+    const location = normalizeLocation(transaction.rawLocation || transaction.location);
+    byLocation.set(location, (byLocation.get(location) ?? 0) + transaction.amount);
+  }
+  const rows = [...byLocation.entries()].sort((left, right) => right[1] - left[1]);
+  const total = rows.reduce((sum, [, value]) => sum + value, 0);
+
+  return (
+    <div
+      className="metric-modal-backdrop"
+      role="presentation"
+      onMouseDown={event => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        className="metric-modal"
+        style={{ width: 'min(100%, 640px)' }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="day-spend-modal-title"
+      >
+        <button className="metric-modal-close" type="button" onClick={onClose} aria-label="Close daily spending details">×</button>
+        <span className="metric-modal-kicker">Daily spending</span>
+        <h2 id="day-spend-modal-title">{fullDate(date)}</h2>
+        <strong className="metric-modal-value">{money(total)}</strong>
+        <div className="metric-modal-body">
+          <p>Total itemized Dining Dollars spent that day.</p>
+          <div className="transaction-table-wrap">
+            <table className="transaction-table">
+              <thead>
+                <tr><th>Dining location</th><th>Amount</th></tr>
+              </thead>
+              <tbody>
+                {rows.length ? rows.map(([location, value]) => (
+                  <tr key={location}><td>{location}</td><td>{money(value)}</td></tr>
+                )) : (
+                  <tr><td colSpan={2} className="empty-cell">No Dining Dollars purchases recorded for this day.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export function DailySpendChart({
   transactions,
   settings,
@@ -23,6 +102,7 @@ export function DailySpendChart({
   asOf: IsoDate;
   target: number;
 }) {
+  const [selectedDate, setSelectedDate] = useState<IsoDate | null>(null);
   const dates = campusDates(settings).filter(date => date <= asOf);
   const totals = dailyTotals(transactions);
   if (!dates.length) return <div className="empty-chart">No campus days to display yet.</div>;
@@ -43,36 +123,60 @@ export function DailySpendChart({
   const linePoints = values.map((value, index) => `${x(index)},${y(value)}`).join(' ');
 
   return (
-    <svg className="chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Daily spending line and dot chart">
-      {[0, 1, 2, 3, 4].map(step => {
-        const value = max * step / 4;
-        const yy = y(value);
-        return (
-          <g key={step}>
-            <line className="chart-grid" x1={left} x2={width - right} y1={yy} y2={yy} />
-            <text className="chart-axis" x={left - 7} y={yy + 4} textAnchor="end">${Math.round(value)}</text>
-          </g>
-        );
-      })}
-      <line className="chart-target" x1={left} x2={width - right} y1={y(target)} y2={y(target)} />
-      {values.length > 1 ? <polyline className="chart-line" points={linePoints} /> : null}
-      {values.map((value, index) => (
-        <circle
-          key={dates[index]}
-          className={value > 0 ? 'chart-dot' : 'chart-dot chart-dot-empty'}
-          cx={x(index)}
-          cy={y(value)}
-          r={value > 0 ? 4 : 2.4}
-        >
-          <title>{shortDate(String(dates[index]))}: {money(value)}</title>
-        </circle>
-      ))}
-      {labels.map(index => (
-        <text key={index} className="chart-axis" x={x(index)} y={height - 8} textAnchor="middle">
-          {shortDate(String(dates[index]))}
-        </text>
-      ))}
-    </svg>
+    <>
+      <svg className="chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Daily spending line and dot chart. Select a dot to open that day's spending details.">
+        {[0, 1, 2, 3, 4].map(step => {
+          const value = max * step / 4;
+          const yy = y(value);
+          return (
+            <g key={step}>
+              <line className="chart-grid" x1={left} x2={width - right} y1={yy} y2={yy} />
+              <text className="chart-axis" x={left - 7} y={yy + 4} textAnchor="end">${Math.round(value)}</text>
+            </g>
+          );
+        })}
+        <line className="chart-target" x1={left} x2={width - right} y1={y(target)} y2={y(target)} />
+        {values.length > 1 ? <polyline className="chart-line" points={linePoints} /> : null}
+        {values.map((value, index) => {
+          const date = dates[index]!;
+          const openDetails = () => setSelectedDate(date);
+          return (
+            <g
+              key={date}
+              role="button"
+              tabIndex={0}
+              aria-label={`${fullDate(date)}: ${money(value)}. Open daily spending details.`}
+              onClick={openDetails}
+              onKeyDown={event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  openDetails();
+                }
+              }}
+              style={{ cursor: 'pointer' }}
+            >
+              <title>{shortDate(String(date))}: {money(value)} · click for details</title>
+              <circle cx={x(index)} cy={y(value)} r={10} fill="transparent" />
+              <circle
+                className={value > 0 ? 'chart-dot' : 'chart-dot chart-dot-empty'}
+                cx={x(index)}
+                cy={y(value)}
+                r={value > 0 ? 4 : 2.4}
+                pointerEvents="none"
+              />
+            </g>
+          );
+        })}
+        {labels.map(index => (
+          <text key={index} className="chart-axis" x={x(index)} y={height - 8} textAnchor="middle">
+            {shortDate(String(dates[index]))}
+          </text>
+        ))}
+      </svg>
+      {selectedDate ? (
+        <DaySpendModal date={selectedDate} transactions={transactions} onClose={() => setSelectedDate(null)} />
+      ) : null}
+    </>
   );
 }
 
