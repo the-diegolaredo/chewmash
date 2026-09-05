@@ -49,7 +49,7 @@ describe('calculateBudgetStats', () => {
     });
 
     expect(stats.officialBalance).toBe(0);
-    expect(stats.officialSpent).toBe(100);
+    expect(stats.officialSpent).toBeNull();
     expect(stats.paceSpend).toBe(24);
     expect(stats.status).toBe('under');
   });
@@ -79,6 +79,8 @@ describe('calculateBudgetStats', () => {
     expect(stats.paceSpend).toBe(463.18);
     expect(stats.paceDelta).toBeCloseTo(23.90696, 5);
     expect(stats.status).toBe('under');
+    expect(stats.officialBalance).toBe(2927.31);
+    expect(stats.officialSpent).toBeNull();
   });
 
   it('ignores a balance snapshot dated after the requested as-of date', () => {
