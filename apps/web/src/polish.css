@@ -1,3 +1,26 @@
+.web-floating-nav .nav-item {
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  line-height: 1;
+}
+
+.web-floating-nav .nav-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.web-floating-nav .nav-label {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .nav-lightbulb {
   display: grid;
   place-items: center;
