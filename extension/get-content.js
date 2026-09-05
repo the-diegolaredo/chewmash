@@ -7,7 +7,10 @@
   const STORAGE_KEY = 'chewmashGetPayload';
   const dateRe = /\b(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})\b/;
   const timeRe = /\b(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)\b/i;
-  const amountRe = /-?\$\s*\d[\d,]*\.\d{2}/g;
+
+  // GET renders charges like "- $13.07" (with a space between the minus and $).
+  // Also accept compact "-$13.07" and Unicode minus characters.
+  const amountRe = /[-−]?\s*\$\s*\d[\d,]*\.\d{2}/g;
 
   function toIsoDate(value) {
     const match = String(value || '').match(dateRe);
@@ -36,12 +39,18 @@
   }
 
   function moneyNumber(value) {
-    const parsed = Number(String(value || '').replace(/[^0-9.-]/g, ''));
+    const normalized = String(value || '').replace(/−/g, '-');
+    const parsed = Number(normalized.replace(/[^0-9.-]/g, ''));
     return Number.isFinite(parsed) ? parsed : null;
   }
 
   function looksLikeHeader(text) {
     return /account name|date\s*&?\s*time|activity details|amount\s*\(currency\)|transaction history/i.test(text);
+  }
+
+  function firstAmount(text) {
+    const matches = String(text || '').match(amountRe) || [];
+    return matches[0] || null;
   }
 
   function parseTransactionRow(row) {
@@ -65,11 +74,11 @@
     if (signedAmount === null || signedAmount >= 0) return null;
 
     const dateCellIndex = cells.findIndex(cell => dateRe.test(cell) || timeRe.test(cell));
-    const amountCellIndex = cells.findIndex(cell => (cell.match(amountRe) || []).length > 0);
+    const amountCellIndex = cells.findIndex(cell => firstAmount(cell) !== null);
 
     let detailCandidates = cells.filter((cell, index) => {
       if (index === dateCellIndex || index === amountCellIndex) return false;
-      if (dateRe.test(cell) || timeRe.test(cell) || amountRe.test(cell)) return false;
+      if (dateRe.test(cell) || timeRe.test(cell) || firstAmount(cell) !== null) return false;
       if (/^First Year Plus$/i.test(cell)) return false;
       if (/^Dining Dollars?$/i.test(cell)) return false;
       return !looksLikeHeader(cell);
