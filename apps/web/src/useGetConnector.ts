@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ConnectorSnapshot, ConnectorSyncStatus } from '../../../src/connector/protocol';
+import type { DineOnCampusMenuItem } from '../../../src/menu/dineoncampus';
 import { sanitizeState, type ChewMashState } from '../../../src/storage/state';
 import { webStateRepository } from '../../../src/storage/web';
 import { requestConnector, subscribeConnectorMessages } from './connector';
@@ -12,6 +13,7 @@ export interface GetConnectorModel {
   message: string | null;
   syncStatus: ConnectorSyncStatus | null;
   connect: () => Promise<void>;
+  fetchMenu: (date: string) => Promise<DineOnCampusMenuItem[] | null>;
 }
 
 export function useGetConnector(
@@ -128,6 +130,14 @@ export function useGetConnector(
     }
   }, [applySnapshot, installed, version]);
 
+  const fetchMenu = useCallback(async (date: string): Promise<DineOnCampusMenuItem[] | null> => {
+    if (!installed) return null;
+    const response = await requestConnector('menu', 20_000, { date });
+    if (!response) throw new Error('The connector did not respond to the menu request.');
+    if (!response.ok) throw new Error(response.error || 'The connector could not fetch the Dine On Campus menu.');
+    return response.payload?.menu ?? null;
+  }, [installed]);
+
   return {
     installed,
     checking,
@@ -136,5 +146,6 @@ export function useGetConnector(
     message,
     syncStatus,
     connect,
+    fetchMenu,
   };
 }
