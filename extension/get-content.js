@@ -1,144 +1,123 @@
 (() => {
   'use strict';
 
-  // Only inspect the GET transaction-history page. Other Cal Poly GET pages are ignored.
-  if (!/\/calpoly\/full\/history\.php$/i.test(location.pathname)) return;
+  if (!/\/calpoly\/full\/history\.php/i.test(location.pathname)) return;
 
   const STORAGE_KEY = 'chewmashGetPayload';
+  const STATUS_KEY = 'chewmashGetStatus';
   const dateRe = /\b(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})\b/;
   const timeRe = /\b(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)\b/i;
-
-  // GET renders charges like "- $13.07" (with a space between the minus and $).
-  // Also accept compact "-$13.07" and Unicode minus characters.
   const amountRe = /[-−]?\s*\$\s*\d[\d,]*\.\d{2}/g;
 
   function toIsoDate(value) {
-    const match = String(value || '').match(dateRe);
-    if (!match) return null;
-    const year = match[3].length === 2 ? Number(`20${match[3]}`) : Number(match[3]);
-    const month = Number(match[1]);
-    const day = Number(match[2]);
-    if (!year || month < 1 || month > 12 || day < 1 || day > 31) return null;
-    return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const m = String(value || '').match(dateRe);
+    if (!m) return null;
+    const year = m[3].length === 2 ? Number(`20${m[3]}`) : Number(m[3]);
+    return `${year}-${String(Number(m[1])).padStart(2,'0')}-${String(Number(m[2])).padStart(2,'0')}`;
   }
 
   function localDate() {
     const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
 
   function normalizeLocation(value) {
     return String(value || 'Unknown')
       .replace(/^Grubhub\s+/i, '')
-      .replace(/\s+\d{3,4}$/, '')
+      .replace(/\s+\d{3,4}$/i, '')
       .replace(/\s+/g, ' ')
       .trim() || 'Unknown';
   }
 
   function moneyNumber(value) {
-    const normalized = String(value || '').replace(/−/g, '-');
-    const parsed = Number(normalized.replace(/[^0-9.-]/g, ''));
-    return Number.isFinite(parsed) ? parsed : null;
+    const s = String(value || '').replace(/−/g, '-').replace(/\s+/g, '');
+    const n = Number(s.replace(/[^0-9.-]/g, ''));
+    return Number.isFinite(n) ? n : null;
   }
 
-  function looksLikeHeader(text) {
-    return /account name|date\s*&?\s*time|activity details|amount\s*\(currency\)|transaction history/i.test(text);
-  }
-
-  function firstAmount(text) {
-    const matches = String(text || '').match(amountRe) || [];
-    return matches[0] || null;
-  }
-
-  function parseTransactionRow(row) {
-    const cells = [...row.querySelectorAll('th,td')]
-      .map(cell => cell.innerText.replace(/\s+/g, ' ').trim())
-      .filter(Boolean);
-    if (cells.length < 2) return null;
-
+  function parseRow(row) {
+    const cells = [...row.querySelectorAll('th,td')].map(c => (c.innerText || c.textContent || '').replace(/\s+/g,' ').trim()).filter(Boolean);
+    if (cells.length < 3) return null;
     const joined = cells.join(' | ');
-    if (looksLikeHeader(joined)) return null;
+    if (/account name|activity details|amount\s*\(currency\)/i.test(joined)) return null;
 
-    const dateMatch = joined.match(dateRe);
-    const timeMatch = joined.match(timeRe);
+    const date = joined.match(dateRe)?.[0];
+    const time = joined.match(timeRe)?.[0];
     const amounts = joined.match(amountRe) || [];
-    if (!dateMatch || !timeMatch || !amounts.length) return null;
+    if (!date || !time || !amounts.length) return null;
 
-    // GET spending rows are charges. Ignore deposits/credits so the app does not
-    // accidentally treat plan funding as dining spend.
-    const amountToken = amounts[amounts.length - 1];
-    const signedAmount = moneyNumber(amountToken);
-    if (signedAmount === null || signedAmount >= 0) return null;
+    const amountToken = amounts.at(-1);
+    const signed = moneyNumber(amountToken);
+    if (signed === null || signed >= 0) return null;
 
-    const dateCellIndex = cells.findIndex(cell => dateRe.test(cell) || timeRe.test(cell));
-    const amountCellIndex = cells.findIndex(cell => firstAmount(cell) !== null);
-
-    let detailCandidates = cells.filter((cell, index) => {
-      if (index === dateCellIndex || index === amountCellIndex) return false;
-      if (dateRe.test(cell) || timeRe.test(cell) || firstAmount(cell) !== null) return false;
-      if (/^First Year Plus$/i.test(cell)) return false;
-      if (/^Dining Dollars?$/i.test(cell)) return false;
-      return !looksLikeHeader(cell);
-    });
-
-    // The activity-detail cell is usually between the date/time and amount cells.
-    if (dateCellIndex >= 0 && amountCellIndex > dateCellIndex) {
-      const between = cells.slice(dateCellIndex + 1, amountCellIndex).filter(cell =>
-        !/^First Year Plus$/i.test(cell) && !looksLikeHeader(cell)
-      );
-      if (between.length) detailCandidates = between;
+    const dateIdx = cells.findIndex(c => dateRe.test(c) || timeRe.test(c));
+    const amountIdx = cells.findIndex(c => (c.match(amountRe) || []).length);
+    let rawLocation = '';
+    if (dateIdx >= 0 && amountIdx > dateIdx) {
+      rawLocation = cells.slice(dateIdx + 1, amountIdx).filter(c => !/^First Year Plus$/i.test(c)).join(' ').trim();
+    }
+    if (!rawLocation) {
+      rawLocation = cells.find(c => !dateRe.test(c) && !timeRe.test(c) && !(c.match(amountRe)||[]).length && !/^First Year Plus$/i.test(c)) || 'Unknown';
     }
 
-    const rawLocation = (detailCandidates.sort((a, b) => b.length - a.length)[0] || 'Unknown').trim();
     return {
-      date: toIsoDate(dateMatch[0]),
-      time: timeMatch[0].replace(/\s+/g, ' ').toUpperCase(),
+      date: toIsoDate(date),
+      time: time.replace(/\s+/g,' ').toUpperCase(),
       rawLocation,
       location: normalizeLocation(rawLocation),
-      amount: Math.abs(signedAmount)
+      amount: Math.abs(signed)
     };
   }
 
   function parseTransactions() {
-    const rows = [];
-    document.querySelectorAll('table tr').forEach(row => {
-      const parsed = parseTransactionRow(row);
-      if (parsed?.date && parsed.amount > 0) rows.push(parsed);
-    });
-
+    const found = [];
+    const rows = [...document.querySelectorAll('table tr')];
+    for (const row of rows) {
+      const parsed = parseRow(row);
+      if (parsed?.date && parsed.amount > 0) found.push(parsed);
+    }
     const seen = new Set();
-    return rows.filter(txn => {
-      const key = `${txn.date}|${txn.time}|${txn.rawLocation}|${txn.amount.toFixed(2)}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
+    return found.filter(t => {
+      const k = `${t.date}|${t.time}|${t.rawLocation}|${t.amount.toFixed(2)}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
       return true;
     });
   }
 
   function parseBalance() {
     const text = document.body?.innerText || '';
-    const patterns = [
-      /(?:available|current|ending)\s+balance\s*:?\s*\$\s*([\d,]+\.\d{2})/i,
-      /balance\s*:?\s*\$\s*([\d,]+\.\d{2})/i
-    ];
-    for (const pattern of patterns) {
-      const match = text.match(pattern);
-      if (match) {
-        const value = Number(match[1].replace(/,/g, ''));
-        if (Number.isFinite(value)) return value;
-      }
+    for (const re of [/(?:available|current|ending)\s+balance\s*:?\s*\$\s*([\d,]+\.\d{2})/i,/balance\s*:?\s*\$\s*([\d,]+\.\d{2})/i]) {
+      const m = text.match(re);
+      if (m) return Number(m[1].replace(/,/g,''));
     }
     return null;
   }
 
   async function capture() {
-    const transactions = parseTransactions();
-    const balance = parseBalance();
-    if (!transactions.length && balance === null) return false;
+    let transactions = [];
+    let balance = null;
+    let error = null;
+    try {
+      transactions = parseTransactions();
+      balance = parseBalance();
+    } catch (e) {
+      error = String(e?.message || e);
+    }
 
+    const status = {
+      attemptedAt: new Date().toISOString(),
+      url: location.href,
+      frame: window === top ? 'top' : 'iframe',
+      tableCount: document.querySelectorAll('table').length,
+      rowCount: document.querySelectorAll('table tr').length,
+      matchedTransactions: transactions.length,
+      balance,
+      error
+    };
+    await chrome.storage.local.set({ [STATUS_KEY]: status });
+
+    if (!transactions.length && balance === null) return status;
     const payload = {
       schemaVersion: 1,
       capturedAt: new Date().toISOString(),
@@ -146,21 +125,23 @@
       balance,
       transactions
     };
+    await chrome.storage.local.set({ [STORAGE_KEY]: payload, [STATUS_KEY]: status });
+    return status;
+  }
 
-    // Store structured dining data only. Do not store cookies, credentials,
-    // the raw page HTML, student IDs, or other GET page contents.
-    await chrome.storage.local.set({ [STORAGE_KEY]: payload });
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type !== 'CHEWMASH_CAPTURE_NOW') return;
+    capture().then(status => sendResponse({ ok: true, status })).catch(err => sendResponse({ ok: false, error: String(err) }));
     return true;
-  }
+  });
 
-  let timer = null;
-  function scheduleCapture() {
+  let timer;
+  const schedule = () => {
     clearTimeout(timer);
-    timer = setTimeout(() => capture().catch(() => {}), 250);
-  }
-
-  scheduleCapture();
-  const observer = new MutationObserver(scheduleCapture);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+    timer = setTimeout(() => capture().catch(() => {}), 300);
+  };
+  schedule();
+  const observer = new MutationObserver(schedule);
+  observer.observe(document.documentElement, { childList:true, subtree:true });
   setTimeout(() => observer.disconnect(), 15000);
 })();
