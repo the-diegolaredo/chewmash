@@ -136,6 +136,16 @@ export function App() {
     setPdfMessage(null);
   }
 
+  async function logOut() {
+    const confirmed = window.confirm(
+      'Log out of chewmash on this device? chewmash has no server account, so logging out removes the local plan and dining data stored in this browser. Export a backup first if you want to keep a copy.',
+    );
+    if (!confirmed) return;
+    if (typeof localStorage !== 'undefined') localStorage.removeItem('chewmash:v1');
+    await webStateRepository.reset();
+    window.location.reload();
+  }
+
   const primaryTab = view === 'home' || view === 'upload' ? view : null;
   const hasDiningData = Boolean(state && (state.transactions.length || state.balanceSnapshots.length));
 
@@ -183,6 +193,7 @@ export function App() {
           exportBackup={exportBackup}
           importBackup={() => backupInput.current?.click()}
           clearDiningData={clearDiningData}
+          logOut={logOut}
         />
       )}
 
@@ -425,7 +436,7 @@ function ConnectorSummary({ connector }: { connector: GetConnectorModel }) {
   );
 }
 
-function AccountPage({ state, planDraft, setPlanDraft, updateAway, savePlan, exportBackup, importBackup, clearDiningData }: {
+function AccountPage({ state, planDraft, setPlanDraft, updateAway, savePlan, exportBackup, importBackup, clearDiningData, logOut }: {
   state: ChewMashState;
   planDraft: PlanSettings | null;
   setPlanDraft: (plan: PlanSettings) => void;
@@ -434,6 +445,7 @@ function AccountPage({ state, planDraft, setPlanDraft, updateAway, savePlan, exp
   exportBackup: () => void;
   importBackup: () => void;
   clearDiningData: () => Promise<void>;
+  logOut: () => Promise<void>;
 }) {
   if (!planDraft) return null;
   const awaySlots = Array.from({ length: 3 }, (_, index) => planDraft.awayPeriods[index] ?? { start: '', end: '' });
@@ -466,6 +478,10 @@ function AccountPage({ state, planDraft, setPlanDraft, updateAway, savePlan, exp
           <button className="secondary-button" type="button" onClick={importBackup}>Import backup</button>
           <button className="danger-button" type="button" onClick={() => void clearDiningData()}>Clear dining data</button>
         </div>
+      </SectionCard>
+      <SectionCard title="Log out">
+        <p className="section-copy">chewmash has no cloud account to sign out of. Logging out removes this browser's local chewmash plan and dining data, then returns to the setup screen.</p>
+        <button className="danger-button" type="button" onClick={() => void logOut()}>Log out</button>
       </SectionCard>
       <SectionCard title="Imported transactions" action={<span className="section-meta">{transactions.length} stored</span>}>
         <div className="transaction-table-wrap">
