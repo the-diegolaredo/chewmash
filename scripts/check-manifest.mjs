@@ -4,7 +4,10 @@ const manifestPath = '.output/chrome-mv3/manifest.json';
 const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
 
 const expectedPermissions = ['storage', 'tabs'];
-const expectedHosts = ['https://get.cbord.com/calpoly/*'];
+const expectedHosts = [
+  'https://get.cbord.com/calpoly/*',
+  'https://apiv4.dineoncampus.com/*',
+];
 const allowedContentScriptMatches = new Set([
   'https://get.cbord.com/calpoly/*',
   'https://the-diegolaredo.github.io/chewmash/*',
