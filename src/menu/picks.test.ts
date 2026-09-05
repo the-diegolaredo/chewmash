@@ -49,32 +49,42 @@ describe('Picks recommendation engine', () => {
     expect(picks[0]?.fitsBudget).toBeNull();
   });
 
-  it('keeps drink suggestions to at most two when food options are available', () => {
+  it('keeps the primary list to at most one beverage when food options are available', () => {
     const foods = Array.from({ length: 12 }, (_, index) => item({
       id: `food-${index}`,
       name: `Lunch Plate ${index + 1}`,
-      location: `Food Spot ${index % 6}`,
-      station: 'Kitchen',
+      location: index % 2 === 0 ? 'Vista Grande' : '1901 Marketplace',
+      station: index % 3 === 0 ? 'Panda Express' : 'Kitchen',
       period: 'lunch',
       price: 9,
       calories: 550,
     }));
-    const drinks = Array.from({ length: 6 }, (_, index) => item({
-      id: `drink-${index}`,
-      name: `Iced Tea ${index + 1}`,
-      location: `Drink Spot ${index}`,
-      station: 'Beverages',
-      period: 'lunch',
-      price: 4,
-      calories: 180,
-    }));
+    const drinks = [
+      item({ id: 'drink-1', name: 'Caramel Frappuccino Blended Beverage', location: 'Noodles', station: 'Noodles', calories: 380 }),
+      item({ id: 'drink-2', name: 'Iced Caffe Latte', location: 'Starbucks', station: 'Coffee', calories: 180 }),
+      item({ id: 'drink-3', name: 'Strawberry Refresher', location: 'Cafe', station: 'Cold Bar', calories: 120 }),
+      item({ id: 'drink-4', name: 'Vanilla Sweet Cream Cold Brew', location: 'Cafe', station: 'Cold Bar', calories: 160 }),
+    ];
 
     const picks = rankMenuPicks([...drinks, ...foods], { remainingToday: 20, mealPeriod: 'lunch', limit: 12 });
-    const drinkPicks = picks.filter(pick => pick.item.station === 'Beverages');
+    const drinkNames = new Set(drinks.map(drink => drink.name));
+    const drinkPicks = picks.filter(pick => drinkNames.has(pick.item.name));
 
     expect(picks).toHaveLength(12);
-    expect(drinkPicks.length).toBeLessThanOrEqual(2);
-    expect(picks.length - drinkPicks.length).toBeGreaterThanOrEqual(10);
+    expect(drinkPicks.length).toBeLessThanOrEqual(1);
+    expect(picks.length - drinkPicks.length).toBeGreaterThanOrEqual(11);
+  });
+
+  it('boosts solid food from Vista Grande, 1901, and fast-food counters', () => {
+    const picks = rankMenuPicks([
+      item({ id: 'generic', name: 'Lunch Plate', location: 'Generic Cafe', station: 'Kitchen', calories: 500 }),
+      item({ id: 'vg', name: 'Chicken Rice Bowl', location: 'Vista Grande', station: 'Hearth', calories: 500 }),
+      item({ id: '1901', name: 'Poke Bowl', location: '1901 Marketplace', station: 'Kai Poke', calories: 500 }),
+      item({ id: 'fast', name: 'Chicken Sandwich', location: '1901 Marketplace', station: 'Chick-fil-A', calories: 500 }),
+    ], { remainingToday: 20, mealPeriod: 'lunch', limit: 4 });
+
+    expect(picks.slice(0, 3).map(pick => pick.item.id)).toEqual(expect.arrayContaining(['vg', '1901', 'fast']));
+    expect(picks[3]?.item.id).toBe('generic');
   });
 
   it('keeps surprise choices inside the affordable relevant pool when possible', () => {

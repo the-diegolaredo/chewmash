@@ -7,6 +7,20 @@
   display: block;
 }
 
+.home-heading,
+.picks-heading {
+  width: 100%;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.home-heading h1,
+.home-heading .subtle,
+.picks-heading h1,
+.picks-heading .subtle {
+  margin-inline: auto;
+}
+
 .picks-now-card {
   position: relative;
   overflow: hidden;
