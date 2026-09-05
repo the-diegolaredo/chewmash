@@ -115,7 +115,12 @@ export function FirstRunGate({ children }: { children: ReactNode }) {
             ) : (
               <>
                 <p>The connector is the recommended way to keep your GET purchases in sync.</p>
-                <a className="primary-button setup-download" href="./downloads/chewmash-connector-beta.zip" download>
+                <a
+                  className="primary-button setup-download"
+                  href="./downloads/chewmash-connector-beta.zip"
+                  download
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
                   Download connector beta
                 </a>
               </>
