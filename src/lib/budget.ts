@@ -43,9 +43,10 @@ export function calculateBudgetStats({
     ? settings.startingBudget / allCampusDays.length
     : 0;
 
-  // Average spend is intentionally itemized-spend based. It should answer
-  // "what have I actually spent per campus day?" and must not be distorted
-  // by a missing or stale balance snapshot.
+  // Itemized purchases drive both the daily average and budget pace. This
+  // keeps the status card consistent with the transaction history the user can
+  // inspect in chewmash instead of letting a statement balance silently change
+  // the pace math.
   const itemized = itemizedSpend(transactions, clampedAsOf);
   const averageSpentPerCampusDay = elapsed.length > 0 ? itemized / elapsed.length : 0;
 
@@ -55,10 +56,10 @@ export function calculateBudgetStats({
     ? null
     : Math.max(0, settings.startingBudget - officialBalance);
 
-  // Budget pace prefers an authoritative balance when one exists. Otherwise,
-  // it safely falls back to itemized spend. Crucially, null is never coerced
-  // into a $0 balance.
-  const paceSpend = officialSpent ?? itemized;
+  // Budget status compares what the plan expected to be spent by now with the
+  // itemized purchases through the same date. Balance snapshots remain useful
+  // for remaining-balance planning, but do not alter the under/on/over status.
+  const paceSpend = itemized;
   const expectedSpend = targetPerCampusDay * elapsed.length;
   const paceDelta = expectedSpend - paceSpend;
   const tolerance = Math.max(1, targetPerCampusDay * 0.05);
