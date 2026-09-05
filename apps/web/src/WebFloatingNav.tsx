@@ -24,7 +24,6 @@ export function WebFloatingNav({
           </svg>
         </span>
         <span>Picks</span>
-        <small className="nav-development-label">Under development</small>
       </button>
       <button className={page === 'home' ? 'nav-item active' : 'nav-item'} onClick={() => onChange('home')} type="button">
         <span aria-hidden="true">⌂</span>
