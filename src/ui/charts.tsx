@@ -91,6 +91,88 @@ function DaySpendModal({
   );
 }
 
+function LocationSpendModal({
+  location,
+  transactions,
+  onClose,
+}: {
+  location: string;
+  transactions: DiningTransaction[];
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
+  const matching = transactions
+    .filter(transaction => normalizeLocation(transaction.rawLocation || transaction.location) === location)
+    .sort((left, right) => `${right.date} ${right.time ?? ''}`.localeCompare(`${left.date} ${left.time ?? ''}`));
+  const total = matching.reduce((sum, transaction) => sum + transaction.amount, 0);
+  const overallTotal = transactions.reduce((sum, transaction) => sum + transaction.amount, 0);
+  const average = matching.length ? total / matching.length : 0;
+  const share = overallTotal ? total / overallTotal * 100 : 0;
+  const recent = matching.slice(0, 8);
+
+  return (
+    <div
+      className="metric-modal-backdrop"
+      role="presentation"
+      onMouseDown={event => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        className="metric-modal"
+        style={{ width: 'min(100%, 680px)' }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="location-spend-modal-title"
+      >
+        <button className="metric-modal-close" type="button" onClick={onClose} aria-label={`Close ${location} spending details`}>×</button>
+        <span className="metric-modal-kicker">Dining location</span>
+        <h2 id="location-spend-modal-title">{location}</h2>
+        <strong className="metric-modal-value">{money(total)}</strong>
+        <div className="metric-modal-body">
+          <p>Total itemized Dining Dollars spent at this location.</p>
+          <div className="detail-grid">
+            <div><span>Purchases</span><strong>{matching.length}</strong></div>
+            <div><span>Average purchase</span><strong>{money(average)}</strong></div>
+            <div><span>Share of itemized spend</span><strong>{share.toFixed(1)}%</strong></div>
+          </div>
+          <div>
+            <h3 style={{ marginBottom: 8, fontSize: 13, color: '#444d56' }}>Recent transactions</h3>
+            <div className="transaction-table-wrap">
+              <table className="transaction-table">
+                <thead>
+                  <tr><th>Date</th><th>Time</th><th>Amount</th></tr>
+                </thead>
+                <tbody>
+                  {recent.length ? recent.map((transaction, index) => (
+                    <tr key={`${transaction.date}-${transaction.time ?? ''}-${transaction.amount}-${index}`}>
+                      <td>{shortDate(String(transaction.date))}</td>
+                      <td>{transaction.time ?? '—'}</td>
+                      <td>{money(transaction.amount)}</td>
+                    </tr>
+                  )) : (
+                    <tr><td colSpan={3} className="empty-cell">No transactions recorded for this location.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {matching.length > recent.length ? (
+              <small className="detail-source">Showing the {recent.length} most recent of {matching.length} purchases.</small>
+            ) : null}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export function DailySpendChart({
   transactions,
   settings,
@@ -274,6 +356,8 @@ function DiningBrandMark({ brand, cx, cy }: { brand: BrandMark; cx: number; cy: 
 }
 
 export function PlaceSpendChart({ transactions }: { transactions: DiningTransaction[] }) {
+  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
+  const [hoveredLocation, setHoveredLocation] = useState<string | null>(null);
   const totals = new Map<string, number>();
   for (const transaction of transactions) {
     const location = normalizeLocation(transaction.rawLocation || transaction.location);
@@ -299,37 +383,98 @@ export function PlaceSpendChart({ transactions }: { transactions: DiningTransact
   const baseline = top + innerHeight;
 
   return (
-    <svg className="chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Spending by dining location bar chart">
-      {[0, 1, 2, 3].map(step => {
-        const yy = top + innerHeight - innerHeight * step / 3;
-        return <line key={step} className="chart-grid" x1={left} x2={width - right} y1={yy} y2={yy} />;
-      })}
-      <line className="chart-grid" x1={left} x2={width - right} y1={baseline} y2={baseline} />
-      {rows.map(([name, value], index) => {
-        const barHeight = value / max * innerHeight;
-        const x = left + slot * index + (slot - barWidth) / 2;
-        const y = baseline - barHeight;
-        const centerX = x + barWidth / 2;
-        const percent = total ? value / total * 100 : 0;
-        const brand = brandForLocation(name);
-        const labelLines = compactLabelLines(name);
-        return (
-          <g key={name} role="img" aria-label={`${name}: ${money(value)}, ${percent.toFixed(1)} percent of itemized location spending`}>
-            <title>{name}: {money(value)} · {percent.toFixed(1)}%</title>
-            <rect x={x} y={y} width={barWidth} height={barHeight} rx={3} fill={greenShades[index % greenShades.length]} />
-            <text className="chart-axis" x={centerX} y={baseline + 17} textAnchor="middle">{percent.toFixed(0)}%</text>
-            {brand ? (
-              <DiningBrandMark brand={brand} cx={centerX} cy={baseline + 51} />
-            ) : (
-              <text className="chart-axis" x={centerX} y={baseline + 43} textAnchor="middle">
-                {labelLines.map((line, lineIndex) => (
-                  <tspan key={line} x={centerX} dy={lineIndex === 0 ? 0 : 13}>{line}</tspan>
-                ))}
+    <>
+      <svg className="chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Spending by dining location bar chart. Select a bar to open location details.">
+        {[0, 1, 2, 3].map(step => {
+          const yy = top + innerHeight - innerHeight * step / 3;
+          return <line key={step} className="chart-grid" x1={left} x2={width - right} y1={yy} y2={yy} />;
+        })}
+        <line className="chart-grid" x1={left} x2={width - right} y1={baseline} y2={baseline} />
+        {rows.map(([name, value], index) => {
+          const barHeight = value / max * innerHeight;
+          const x = left + slot * index + (slot - barWidth) / 2;
+          const y = baseline - barHeight;
+          const centerX = x + barWidth / 2;
+          const percent = total ? value / total * 100 : 0;
+          const brand = brandForLocation(name);
+          const labelLines = compactLabelLines(name);
+          const active = hoveredLocation === name;
+          const openDetails = () => setSelectedLocation(name);
+          return (
+            <g
+              key={name}
+              role="button"
+              tabIndex={0}
+              aria-label={`${name}: ${money(value)}, ${percent.toFixed(1)} percent of itemized location spending. Open recent transactions.`}
+              onClick={openDetails}
+              onKeyDown={event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  openDetails();
+                }
+              }}
+              onMouseEnter={() => setHoveredLocation(name)}
+              onMouseLeave={() => setHoveredLocation(current => current === name ? null : current)}
+              onFocus={() => setHoveredLocation(name)}
+              onBlur={() => setHoveredLocation(current => current === name ? null : current)}
+              style={{ cursor: 'pointer', outline: 'none' }}
+            >
+              <title>{name}: {money(value)} · {percent.toFixed(1)}% · click for recent transactions</title>
+              <rect
+                x={left + slot * index}
+                y={top}
+                width={slot}
+                height={innerHeight + 72}
+                fill="transparent"
+                pointerEvents="all"
+              />
+              <rect
+                x={x}
+                y={active ? Math.max(top, y - 2) : y}
+                width={barWidth}
+                height={active ? barHeight + Math.min(2, y - top) : barHeight}
+                rx={active ? 5 : 3}
+                fill={greenShades[index % greenShades.length]}
+                stroke={active ? '#ffffff' : 'transparent'}
+                strokeWidth={active ? 1.5 : 0}
+                style={{
+                  opacity: active ? 1 : .9,
+                  filter: active ? 'drop-shadow(0 5px 5px rgba(21,79,58,.24))' : 'none',
+                  transition: 'opacity .16s ease, filter .16s ease',
+                }}
+              />
+              <text
+                x={centerX}
+                y={Math.max(top + 10, y - 8)}
+                textAnchor="middle"
+                style={{
+                  fill: '#355b4a',
+                  fontSize: 10,
+                  fontWeight: 750,
+                  opacity: active ? 1 : 0,
+                  transition: 'opacity .16s ease',
+                  pointerEvents: 'none',
+                }}
+              >
+                {money(value)}
               </text>
-            )}
-          </g>
-        );
-      })}
-    </svg>
+              <text className="chart-axis" x={centerX} y={baseline + 17} textAnchor="middle">{percent.toFixed(0)}%</text>
+              {brand ? (
+                <DiningBrandMark brand={brand} cx={centerX} cy={baseline + 51} />
+              ) : (
+                <text className="chart-axis" x={centerX} y={baseline + 43} textAnchor="middle">
+                  {labelLines.map((line, lineIndex) => (
+                    <tspan key={line} x={centerX} dy={lineIndex === 0 ? 0 : 13}>{line}</tspan>
+                  ))}
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+      {selectedLocation ? (
+        <LocationSpendModal location={selectedLocation} transactions={transactions} onClose={() => setSelectedLocation(null)} />
+      ) : null}
+    </>
   );
 }
