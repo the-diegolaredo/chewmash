@@ -172,7 +172,7 @@ export function App() {
   return (
     <main className="app-shell">
       <header className="app-header">
-        <button className="brand" type="button" onClick={() => setView('home')}>ChewMash</button>
+        <button className="brand" type="button" onClick={() => setView('home')}>chewmash</button>
         <button className="account-link" type="button" onClick={() => setView(view === 'account' ? 'home' : 'account')}>
           {view === 'account' ? 'Done' : 'Account'}
         </button>
@@ -242,7 +242,7 @@ function HomePage({ state, stats, today }: {
   today: string;
 }) {
   const [detailMetric, setDetailMetric] = useState<MetricDetail>(null);
-  const [activeMetricIndex, setActiveMetricIndex] = useState(0);
+  const [activeMetricIndex, setActiveMetricIndex] = useState(1);
   const metricStripRef = useRef<HTMLDivElement>(null);
   const spentToday = spendOnDate(state.transactions, today);
   const dollarsLeftToday = dailyTargetRemaining(stats.targetPerCampusDay, spentToday);
@@ -264,7 +264,7 @@ function HomePage({ state, stats, today }: {
   }, []);
 
   useEffect(() => {
-    const frame = window.requestAnimationFrame(() => centerMetric(0, 'auto'));
+    const frame = window.requestAnimationFrame(() => centerMetric(1, 'auto'));
     return () => window.cancelAnimationFrame(frame);
   }, [centerMetric]);
 
@@ -335,7 +335,7 @@ function HomePage({ state, stats, today }: {
         </div>
       </section>
 
-      <SectionCard title="Spending by day" action={<span className="section-meta">Dots show each campus day</span>}>
+      <SectionCard title="Spending by day" action={<span className="section-meta">Select a dot for daily details</span>}>
         <DailySpendChart transactions={state.transactions} settings={state.plan} asOf={today} target={stats.targetPerCampusDay} />
       </SectionCard>
 
@@ -396,7 +396,7 @@ function UploadPage({ syncStatus, openingGet, onOpenGet, onChoosePdf, onFiles, p
       <div className="page-title-row"><div><p className="eyebrow">Bring in dining data</p><h1>Upload</h1></div></div>
 
       <SectionCard title="Sync from GET">
-        <p className="section-copy">ChewMash never asks for your Cal Poly password. Sign into GET normally; the extension reads only the transaction-history table and stores structured dining fields on this device.</p>
+        <p className="section-copy">chewmash never asks for your Cal Poly password. Sign into GET normally; the extension reads only the transaction-history table and stores structured dining fields on this device.</p>
         <button className="primary-button" type="button" onClick={onOpenGet} disabled={openingGet}>{openingGet ? 'Opening GET…' : 'Open GET and sync'}</button>
         <div className="sync-summary">
           {!syncStatus ? 'No GET capture yet.' : syncStatus.error
@@ -468,7 +468,7 @@ function AccountPage({ state, planDraft, setPlanDraft, updateAway, savePlan, exp
       </SectionCard>
 
       <SectionCard title="Data controls">
-        <p className="section-copy">Dining data is stored in Chrome extension storage on this device. ChewMash does not store your GET password, session cookie, or raw GET page HTML.</p>
+        <p className="section-copy">Dining data is stored in Chrome extension storage on this device. chewmash does not store your GET password, session cookie, or raw GET page HTML.</p>
         <div className="button-row">
           <button className="secondary-button" type="button" onClick={exportBackup}>Export backup</button>
           <button className="secondary-button" type="button" onClick={importBackup}>Import backup</button>
