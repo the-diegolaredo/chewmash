@@ -1,0 +1,140 @@
+import { useCallback, useEffect, useState } from 'react';
+import type { ConnectorSnapshot, ConnectorSyncStatus } from '../../../src/connector/protocol';
+import { sanitizeState, type ChewMashState } from '../../../src/storage/state';
+import { webStateRepository } from '../../../src/storage/web';
+import { requestConnector, subscribeConnectorMessages } from './connector';
+
+export interface GetConnectorModel {
+  installed: boolean;
+  checking: boolean;
+  busy: boolean;
+  version: string | null;
+  message: string | null;
+  syncStatus: ConnectorSyncStatus | null;
+  connect: () => Promise<void>;
+}
+
+export function useGetConnector(
+  onState: (state: ChewMashState) => void,
+): GetConnectorModel {
+  const [installed, setInstalled] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [version, setVersion] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<ConnectorSyncStatus | null>(null);
+
+  const applySnapshot = useCallback(async (snapshot: ConnectorSnapshot) => {
+    const clean = sanitizeState({
+      transactions: snapshot.transactions,
+      balanceSnapshots: snapshot.balanceSnapshots,
+      updatedAt: snapshot.updatedAt,
+    });
+    const before = await webStateRepository.load();
+    let after = await webStateRepository.mergeTransactions(clean.transactions);
+    for (const balanceSnapshot of clean.balanceSnapshots) {
+      after = await webStateRepository.addBalanceSnapshot(balanceSnapshot);
+    }
+
+    onState(after);
+    setSyncStatus(snapshot.syncStatus);
+
+    const added = Math.max(0, after.transactions.length - before.transactions.length);
+    if (snapshot.syncStatus?.error) {
+      setMessage(`GET sync error: ${snapshot.syncStatus.error}`);
+    } else if (snapshot.syncStatus) {
+      setMessage(`${after.transactions.length} purchases available · ${added} newly copied to this website`);
+    }
+  }, [onState]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeConnectorMessages(message => {
+      if (message.type === 'CHEWMASH_CONNECTOR_READY') {
+        setInstalled(true);
+        setChecking(false);
+        setVersion(message.payload.version);
+        return;
+      }
+
+      if (message.type === 'CHEWMASH_CONNECTOR_UPDATE') {
+        setInstalled(true);
+        setChecking(false);
+        setVersion(message.payload.version);
+        if (message.payload.snapshot) void applySnapshot(message.payload.snapshot);
+      }
+    });
+
+    return unsubscribe;
+  }, [applySnapshot]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      for (const delay of [0, 350, 800]) {
+        if (delay) await new Promise(resolve => window.setTimeout(resolve, delay));
+        if (cancelled) return;
+        const response = await requestConnector('ping', 700);
+        if (response?.ok && response.payload?.version) {
+          if (cancelled) return;
+          setInstalled(true);
+          setChecking(false);
+          setVersion(response.payload.version);
+          return;
+        }
+      }
+      if (!cancelled) setChecking(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const connect = useCallback(async () => {
+    setMessage(null);
+    setBusy(true);
+    try {
+      let detected = installed;
+      if (!detected) {
+        const ping = await requestConnector('ping', 900);
+        detected = Boolean(ping?.ok && ping.payload?.version);
+        if (detected) {
+          setInstalled(true);
+          setVersion(ping?.payload?.version ?? null);
+        }
+      }
+
+      if (!detected) {
+        setMessage('The chewmash connector is not installed or needs to be reloaded. Install the current Chrome beta, then refresh this page. PDF import still works without the extension.');
+        return;
+      }
+
+      const response = await requestConnector('sync', 2_500);
+      if (!response) {
+        setMessage('The connector did not respond. Reload the extension and this page, then try again.');
+        return;
+      }
+      if (!response.ok) {
+        setMessage(response.error || 'The connector could not open GET.');
+        return;
+      }
+
+      setVersion(response.payload?.version ?? version);
+      if (response.payload?.snapshot) await applySnapshot(response.payload.snapshot);
+      setMessage('GET opened. Sign in normally if needed. When Transaction History loads, chewmash will copy the parsed purchases into this website automatically.');
+    } finally {
+      setBusy(false);
+    }
+  }, [applySnapshot, installed, version]);
+
+  return {
+    installed,
+    checking,
+    busy,
+    version,
+    message,
+    syncStatus,
+    connect,
+  };
+}
