@@ -1,54 +1,63 @@
-# ChewMash Chrome Web Store Listing Draft
+# chewmash Chrome Web Store Listing Draft
 
 ## Name
 
-ChewMash
+chewmash connector
 
 ## Short description
 
-Privacy-first Dining Dollars budgeting for Cal Poly students, with local GET sync and statement import.
+Privacy-first local connector between Cal Poly GET and the chewmash Dining Dollars website.
 
 ## Detailed description
 
-ChewMash helps Cal Poly students understand how quickly they are using Dining Dollars during the term.
+The chewmash connector helps Cal Poly students bring their own Dining Dollars transaction history from authenticated Cal Poly GET into the chewmash website without giving chewmash their Cal Poly password.
 
-The dashboard shows average spending per campus day, today's spending, budget status, remaining balance, a safe daily spending amount, daily spending history, and spending by dining location.
+After the student signs into GET normally, the connector reads structured transaction rows from the GET Transaction History page and stores those parsed dining fields locally in extension storage. When the student uses the chewmash website, a small local bridge can copy those structured fields into the website's IndexedDB so the dashboard updates.
 
-ChewMash can read structured transaction rows from the authenticated Cal Poly GET Transaction History page after the student signs in normally. It can also import supported Cal Poly CBORD statement PDFs as a fallback.
+The connector does not ask for or store Cal Poly usernames or passwords, authentication cookies, SSO/session tokens, student IDs, card numbers, or raw GET page HTML. There is no chewmash backend account required and dining transaction history is not sent to a chewmash server.
 
-Privacy is a core design constraint. Dining data is stored locally in browser extension storage. ChewMash does not ask for or store Cal Poly usernames or passwords, authentication cookies, SSO tokens, student IDs, or raw GET page HTML. There is no ChewMash backend account required.
+The chewmash website also supports local statement-PDF import as a fallback for users who do not install the connector.
 
-ChewMash is an independent student project and is not an official Cal Poly or CBORD product.
+chewmash is an independent student project and is not an official Cal Poly or CBORD product.
 
 ## Single purpose
 
-ChewMash's single purpose is to help Cal Poly students privately track and budget Dining Dollars using their own locally stored dining transaction data.
+The connector's single purpose is to let a student privately copy their own structured Cal Poly GET Dining Dollars transaction data into the chewmash budgeting website on the same device.
 
 ## Permission justifications
 
 ### `storage`
 
-Used to store ChewMash settings, structured dining transactions, balance snapshots, and local sync diagnostics on the user's device.
+Used to store structured dining transactions, balance snapshots when available, and local GET sync diagnostics on the user's device.
 
 ### `tabs`
 
-Used when the user explicitly chooses to sync from GET so ChewMash can open, focus, or refresh the Cal Poly GET Transaction History tab.
+Used only when the user explicitly chooses to sync from GET so the connector can open, focus, or refresh the Cal Poly GET Transaction History tab, and when the toolbar action opens the chewmash website.
 
 ### Host permission: `https://get.cbord.com/calpoly/*`
 
-Used only to run the local transaction-history content script on Cal Poly GET pages. The script extracts structured dining transaction fields from the authenticated Transaction History page after the user signs in normally.
+Used only for the local transaction-history capture path on Cal Poly GET pages. The GET content script extracts structured dining transaction fields after the user signs in normally.
+
+### chewmash website content-script matches
+
+The connector runs a small local bridge only on:
+
+- `https://the-diegolaredo.github.io/chewmash/*`
+- `https://chewmash.app/*`
+
+That bridge supports connector detection, an explicit user-requested GET sync, and copying the already-parsed structured dining fields from extension-local storage into the website's local IndexedDB. It does not read arbitrary browsing activity or page content.
 
 ## Data-use disclosures
 
-ChewMash may handle the following user-provided or website-derived data locally:
+The connector may handle the following locally:
 
 - transaction date and time
 - dining location / activity
 - transaction amount
 - Dining Dollars balance when visible
-- plan dates, starting budget, and away periods
+- local sync diagnostics such as capture time and matched row count
 
-ChewMash does not sell this data, use it for advertising, or send it to a ChewMash server. See `PRIVACY.md` for the full privacy policy.
+The connector does not sell this data, use it for advertising, or send it to a chewmash server. See `PRIVACY.md` for the full privacy policy.
 
 ## Suggested category
 
@@ -60,7 +69,9 @@ https://github.com/the-diegolaredo/chewmash/issues
 
 ## Homepage URL
 
-https://github.com/the-diegolaredo/chewmash
+https://the-diegolaredo.github.io/chewmash/
+
+Change the homepage to `https://chewmash.app/` after the custom domain is live.
 
 ## Privacy policy URL
 
@@ -68,9 +79,10 @@ Use the public GitHub-rendered `PRIVACY.md` page or a dedicated static privacy-p
 
 ## Release checklist
 
-- Confirm the WXT build against the live authenticated GET Transaction History page.
-- Verify Home, Upload, Account, GET sync, PDF import, backup import/export, and clear-data behavior.
-- Confirm generated manifest contains only intended permissions.
+- Confirm the connector against a live authenticated GET Transaction History session.
+- Confirm the GitHub Pages web beta detects the connector and receives a fresh capture.
+- Verify the website stores transferred dining state only in local IndexedDB.
+- Confirm generated manifest contains only intended permissions and site matches.
 - Add final extension icons and store artwork.
 - Capture Chrome Web Store screenshots without personal dining information.
 - Publish a stable versioned ZIP generated by `npm run zip`.
