@@ -1,0 +1,66 @@
+/* Subtle directional page motion for the two-tab web nav. */
+.web-app-shell > .page-stack {
+  animation: chewmash-page-enter 250ms cubic-bezier(.22, 1, .36, 1) both;
+  transform-origin: center top;
+  will-change: transform, opacity;
+}
+
+/* Destination-aware direction: Home lives left of Upload in the floating nav. */
+.web-app-shell:has(.web-floating-nav .nav-item:first-child.active) > .page-stack {
+  animation-name: chewmash-page-enter-left;
+}
+
+.web-app-shell:has(.web-floating-nav .nav-item:last-child.active) > .page-stack {
+  animation-name: chewmash-page-enter-right;
+}
+
+@keyframes chewmash-page-enter {
+  from {
+    opacity: .72;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes chewmash-page-enter-left {
+  from {
+    opacity: .72;
+    transform: translate3d(-14px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes chewmash-page-enter-right {
+  from {
+    opacity: .72;
+    transform: translate3d(14px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.web-floating-nav .nav-item {
+  transition: background-color 180ms ease, color 180ms ease, box-shadow 180ms ease, transform 140ms ease;
+}
+
+.web-floating-nav .nav-item:active:not(:disabled) {
+  transform: scale(.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .web-app-shell > .page-stack {
+    animation: none;
+  }
+
+  .web-floating-nav .nav-item {
+    transition: none;
+  }
+}
