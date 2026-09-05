@@ -36,7 +36,7 @@ export function FloatingNav({
   page,
   onChange,
 }: {
-  page: 'home' | 'upload';
+  page: 'home' | 'upload' | null;
   onChange: (page: 'home' | 'upload') => void;
 }) {
   return (
