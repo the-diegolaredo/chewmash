@@ -42,8 +42,9 @@ const indexedDbStorage: StorageAreaLike = {
     const database = await openDatabase();
     try {
       const transaction = database.transaction(STORE_NAME, 'readonly');
+      const done = transactionDone(transaction);
       const value = await requestResult(transaction.objectStore(STORE_NAME).get(key));
-      await transactionDone(transaction);
+      await done;
       return value === undefined ? {} : { [key]: value };
     } finally {
       database.close();
@@ -54,9 +55,10 @@ const indexedDbStorage: StorageAreaLike = {
     const database = await openDatabase();
     try {
       const transaction = database.transaction(STORE_NAME, 'readwrite');
+      const done = transactionDone(transaction);
       const store = transaction.objectStore(STORE_NAME);
       for (const [key, value] of Object.entries(items)) store.put(value, key);
-      await transactionDone(transaction);
+      await done;
     } finally {
       database.close();
     }
@@ -66,8 +68,9 @@ const indexedDbStorage: StorageAreaLike = {
     const database = await openDatabase();
     try {
       const transaction = database.transaction(STORE_NAME, 'readwrite');
+      const done = transactionDone(transaction);
       transaction.objectStore(STORE_NAME).delete(key);
-      await transactionDone(transaction);
+      await done;
     } finally {
       database.close();
     }
