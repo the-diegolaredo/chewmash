@@ -47,8 +47,8 @@ body {
 }
 
 .web-beta-badge {
-  border-color: var(--chewmash-accent-end);
-  background: #fff;
+  border-color: rgba(58, 198, 81, .28);
+  background: linear-gradient(135deg, rgba(58, 198, 81, .09), rgba(202, 250, 65, .16));
   color: #3a463c;
 }
 
@@ -58,8 +58,8 @@ body {
 
 .primary-button,
 .surprise-button {
-  border-color: var(--chewmash-accent-start);
-  background: var(--chewmash-accent-start);
+  border-color: transparent;
+  background: var(--chewmash-accent-gradient);
   color: var(--chewmash-accent-ink);
   box-shadow: 0 7px 18px rgba(58, 198, 81, .16);
 }
@@ -68,10 +68,9 @@ body {
 .primary-button:focus-visible:not(:disabled),
 .surprise-button:hover:not(:disabled),
 .surprise-button:focus-visible:not(:disabled) {
-  border-color: var(--chewmash-accent-end);
-  background: var(--chewmash-accent-end);
-  filter: none;
-  box-shadow: 0 10px 24px rgba(58, 198, 81, .20);
+  border-color: transparent;
+  filter: saturate(1.05) brightness(1.015);
+  box-shadow: 0 10px 24px rgba(58, 198, 81, .22);
 }
 
 .primary-button:focus-visible,
@@ -85,8 +84,8 @@ body {
 
 .secondary-button:hover:not(:disabled),
 .secondary-button:focus-visible:not(:disabled) {
-  border-color: var(--chewmash-accent-start);
-  background: #f7fff4;
+  border-color: rgba(58, 198, 81, .55);
+  background: linear-gradient(135deg, rgba(58, 198, 81, .055), rgba(202, 250, 65, .08));
 }
 
 .first-run-shell {
@@ -168,16 +167,16 @@ body {
 }
 
 .setup-step.done .setup-step-marker {
-  border-color: var(--chewmash-accent-start);
-  background: var(--chewmash-accent-end);
+  border-color: rgba(58, 198, 81, .55);
+  background: linear-gradient(135deg, rgba(58, 198, 81, .16), rgba(202, 250, 65, .22));
   color: #233126;
 }
 
 .setup-message,
 .sync-summary,
 .web-privacy-card {
-  border-color: rgba(58, 198, 81, .35);
-  background: #fff;
+  border-color: #e2e7e0;
+  background: linear-gradient(135deg, rgba(58, 198, 81, .045), rgba(202, 250, 65, .07));
 }
 
 .metric-card {
@@ -203,7 +202,7 @@ body {
   position: absolute;
   inset: 0 0 auto 0;
   height: 4px;
-  background: var(--chewmash-accent-start);
+  background: var(--chewmash-accent-gradient);
 }
 
 .metric-card:focus-visible,
@@ -222,7 +221,7 @@ body {
 
 .carousel-dot.active {
   border-color: var(--chewmash-accent-start);
-  background: var(--chewmash-accent-end);
+  background: var(--chewmash-accent-gradient);
 }
 
 .section-card {
@@ -243,9 +242,14 @@ body {
   filter: drop-shadow(0 1px 2px rgba(58, 198, 81, .20));
 }
 
-/* Location bars use the two solid brand accents rather than a gradient sweep. */
-.chart g[role='button']:nth-of-type(odd) > rect[rx] { fill: var(--chewmash-accent-start) !important; }
-.chart g[role='button']:nth-of-type(even) > rect[rx] { fill: var(--chewmash-accent-end) !important; }
+/* Spending-by-location bars sweep through the requested accent gradient. */
+.chart g[role='button']:nth-of-type(1) > rect[rx] { fill: #3AC651 !important; }
+.chart g[role='button']:nth-of-type(2) > rect[rx] { fill: #4ED158 !important; }
+.chart g[role='button']:nth-of-type(3) > rect[rx] { fill: #65DC59 !important; }
+.chart g[role='button']:nth-of-type(4) > rect[rx] { fill: #7FE656 !important; }
+.chart g[role='button']:nth-of-type(5) > rect[rx] { fill: #9AEF50 !important; }
+.chart g[role='button']:nth-of-type(6) > rect[rx] { fill: #B4F649 !important; }
+.chart g[role='button']:nth-of-type(7) > rect[rx] { fill: #CAFA41 !important; }
 
 .web-floating-nav {
   border-color: #dce1da;
@@ -254,13 +258,13 @@ body {
 }
 
 .web-floating-nav .nav-item.active {
-  background: var(--chewmash-accent-end);
+  background: linear-gradient(135deg, rgba(58, 198, 81, .18), rgba(202, 250, 65, .28));
   color: #202a22;
-  box-shadow: inset 0 0 0 1px var(--chewmash-accent-start);
+  box-shadow: inset 0 0 0 1px rgba(58, 198, 81, .28);
 }
 
 .web-floating-nav .nav-item:not(.nav-item-disabled):hover {
-  background: #f4fff0;
+  background: linear-gradient(135deg, rgba(58, 198, 81, .08), rgba(202, 250, 65, .12));
   color: #283129;
 }
 
@@ -273,7 +277,7 @@ body {
 .drop-zone.dragging,
 .drop-zone:focus-visible {
   border-color: var(--chewmash-accent-start);
-  background: #f7fff3;
+  background: linear-gradient(135deg, rgba(58, 198, 81, .07), rgba(202, 250, 65, .10));
 }
 
 .form-grid input:focus,
@@ -284,11 +288,11 @@ body {
 
 .picks-now-card {
   border-color: rgba(58, 198, 81, .34);
-  background: #f7fff3;
+  background: linear-gradient(135deg, rgba(58, 198, 81, .09), rgba(202, 250, 65, .12));
 }
 
 .picks-now-card::before {
-  background: var(--chewmash-accent-start);
+  background: var(--chewmash-accent-gradient);
 }
 
 .picks-now-card span,
