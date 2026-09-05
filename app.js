@@ -47,13 +47,27 @@
       .trim() || 'Unknown';
   }
 
+  function hasValidBalance(value) {
+    return value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value)) && Number(value) >= 0;
+  }
+
   function loadState() {
     try {
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      const transactions = Array.isArray(parsed.transactions) ? parsed.transactions : [];
+      let snapshots = Array.isArray(parsed.snapshots) ? parsed.snapshots : [];
+
+      // v0.3.0 could mistakenly turn a missing GET balance (null) into $0 because
+      // Number(null) === 0. Remove only those legacy, unverified GET-sync zero
+      // snapshots. Real PDF balances and any future verified zero balance remain valid.
+      snapshots = snapshots.filter(s => !(
+        s?.source === 'GET sync' && Number(s?.endingBalance) === 0 && s?.balanceVerified !== true
+      ));
+
       return {
         settings: { ...DEFAULTS, ...(parsed.settings || {}), breaks: parsed.settings?.breaks || DEFAULTS.breaks },
-        transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
-        snapshots: Array.isArray(parsed.snapshots) ? parsed.snapshots : []
+        transactions,
+        snapshots
       };
     } catch {
       return { settings: structuredClone(DEFAULTS), transactions: [], snapshots: [] };
@@ -100,7 +114,7 @@
 
   function latestSnapshot() {
     return [...state.snapshots]
-      .filter(s => Number.isFinite(Number(s.endingBalance)))
+      .filter(s => hasValidBalance(s?.endingBalance))
       .sort((a,b) => String(a.snapshotDate || '').localeCompare(String(b.snapshotDate || '')))
       .at(-1) || null;
   }
@@ -327,10 +341,11 @@
   }
 
   function mergeSnapshot(snapshot) {
-    if (!snapshot || !Number.isFinite(Number(snapshot.endingBalance))) return;
-    const key = `${snapshot.snapshotDate||''}|${Number(snapshot.endingBalance).toFixed(2)}`;
+    if (!snapshot || !hasValidBalance(snapshot.endingBalance)) return;
+    const cleanSnapshot = { ...snapshot, endingBalance:Number(snapshot.endingBalance) };
+    const key = `${cleanSnapshot.snapshotDate||''}|${cleanSnapshot.endingBalance.toFixed(2)}`;
     const index = state.snapshots.findIndex(s => `${s.snapshotDate||''}|${Number(s.endingBalance).toFixed(2)}` === key);
-    if (index >= 0) state.snapshots[index] = snapshot; else state.snapshots.push(snapshot);
+    if (index >= 0) state.snapshots[index] = cleanSnapshot; else state.snapshots.push(cleanSnapshot);
   }
 
   function setSyncMessage(text,error=false) {
@@ -349,9 +364,9 @@
       location:normalizeLocation(t.rawLocation||t.location||'Unknown'), amount:Math.abs(Number(t.amount)||0), source:'GET sync'
     })).filter(t => /^\d{4}-\d{2}-\d{2}$/.test(t.date) && t.amount>0);
     const added = mergeTransactions(rows);
-    if (Number.isFinite(Number(payload.balance))) {
+    if (hasValidBalance(payload.balance)) {
       const snapshotDate = String(payload.capturedDate || rows.at(-1)?.date || localDate());
-      mergeSnapshot({ snapshotDate, endingBalance:Number(payload.balance), source:'GET sync' });
+      mergeSnapshot({ snapshotDate, endingBalance:Number(payload.balance), source:'GET sync', balanceVerified:true });
     }
     const through = dataThrough();
     if (through) state.settings.asOf = through;
@@ -373,7 +388,7 @@
         return;
       }
       const added = mergeGetPayload(msg.payload);
-      setSyncMessage(`GET sync complete: ${added} new purchase${added===1?'':'s'}${Number.isFinite(Number(msg.payload.balance))?` · balance ${money(msg.payload.balance)}`:''}.`);
+      setSyncMessage(`GET sync complete: ${added} new purchase${added===1?'':'s'}${hasValidBalance(msg.payload.balance)?` · balance ${money(msg.payload.balance)}`:''}.`);
     }
   });
 
@@ -532,6 +547,7 @@
   });
 
   syncInputs();
+  save();
   render();
   setTimeout(requestExtensionData,500);
 })();
