@@ -5,10 +5,11 @@ import './web.css';
 import './polish.css';
 import '../../../src/ui/nimbus.css';
 import './theme.css';
-import './original-layout.css';
 import './page-transitions.css';
 import './upload-polish.css';
 import './sync-updates.css';
+// Load the intended dashboard composition last so later feature styles cannot regress it.
+import './original-layout.css';
 import { App } from './App';
 import { FirstRunGate } from './FirstRunGate';
 import { retireLegacyWebCaches } from './retireLegacyWebCaches';
