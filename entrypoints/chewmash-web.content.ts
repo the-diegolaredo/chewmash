@@ -6,6 +6,7 @@ import {
   type ConnectorResponse,
   type ConnectorSnapshot,
 } from '../src/connector/protocol';
+import type { DineOnCampusMenuItem } from '../src/menu/dineoncampus';
 import { GET_SYNC_STATUS_KEY, readGetSyncStatus } from '../src/get/status';
 import { STORAGE_KEY } from '../src/storage/repository';
 import { stateRepository } from '../src/storage/extension';
@@ -93,6 +94,16 @@ export default defineContentScript({
               version,
               openedGet: result?.openedGet === true,
               snapshot: await readSnapshot(),
+            };
+          } else if (event.data.action === 'menu') {
+            if (!event.data.date) throw new Error('Menu requests require a date.');
+            const result = await browser.runtime.sendMessage({
+              type: 'CHEWMASH_FETCH_MENU_FROM_WEB',
+              date: event.data.date,
+            }) as { menu?: DineOnCampusMenuItem[] } | undefined;
+            response.payload = {
+              version,
+              menu: result?.menu ?? [],
             };
           }
         } catch (error) {
