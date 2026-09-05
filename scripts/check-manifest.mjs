@@ -5,6 +5,11 @@ const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
 
 const expectedPermissions = ['storage', 'tabs'];
 const expectedHosts = ['https://get.cbord.com/calpoly/*'];
+const allowedContentScriptMatches = new Set([
+  'https://get.cbord.com/calpoly/*',
+  'https://the-diegolaredo.github.io/chewmash/*',
+  'https://chewmash.app/*',
+]);
 
 function sorted(values = []) {
   return [...values].sort();
@@ -26,11 +31,19 @@ if (!sameValues(manifest.host_permissions, expectedHosts)) {
   throw new Error(`Unexpected host permissions: ${JSON.stringify(manifest.host_permissions ?? [])}`);
 }
 
+const actualContentScriptMatches = new Set();
 for (const script of manifest.content_scripts ?? []) {
   for (const match of script.matches ?? []) {
-    if (!match.startsWith('https://get.cbord.com/calpoly/')) {
+    if (!allowedContentScriptMatches.has(match)) {
       throw new Error(`Unexpected content-script match: ${match}`);
     }
+    actualContentScriptMatches.add(match);
+  }
+}
+
+for (const expected of allowedContentScriptMatches) {
+  if (!actualContentScriptMatches.has(expected)) {
+    throw new Error(`Missing expected content-script match: ${expected}`);
   }
 }
 
@@ -38,4 +51,4 @@ if (JSON.stringify(manifest).includes('<all_urls>')) {
   throw new Error('Generated manifest unexpectedly contains <all_urls>.');
 }
 
-console.log(`Manifest security check passed for ChewMash ${manifest.version}.`);
+console.log(`Manifest security check passed for chewmash ${manifest.version}.`);
