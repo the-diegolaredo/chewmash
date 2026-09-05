@@ -7,7 +7,10 @@ import '../../../src/ui/nimbus.css';
 import './theme.css';
 import { App } from './App';
 import { FirstRunGate } from './FirstRunGate';
+import { retireLegacyWebCaches } from './retireLegacyWebCaches';
 import { SessionWelcome } from './SessionWelcome';
+
+void retireLegacyWebCaches();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
