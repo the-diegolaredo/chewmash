@@ -5,17 +5,19 @@ export function MetricCard({
   value,
   note,
   tone = 'neutral',
+  active = false,
   onOpen,
 }: {
   label: string;
   value: string;
   note: ReactNode;
   tone?: 'neutral' | 'under' | 'on' | 'over';
+  active?: boolean;
   onOpen?: () => void;
 }) {
   return (
     <button
-      className={`metric-card metric-${tone}`}
+      className={`metric-card metric-${tone}${active ? ' active' : ''}`}
       type="button"
       onClick={onOpen}
       aria-label={`${label}: ${value}. Open details.`}
