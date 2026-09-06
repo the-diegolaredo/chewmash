@@ -11,7 +11,7 @@
 }
 
 .sync-updates-stack {
-  width: min(336px, calc(100vw - 36px));
+  width: min(356px, calc(100vw - 36px));
   display: grid;
   gap: 8px;
   transform: translateY(14px) scale(.965);
@@ -37,12 +37,11 @@
 }
 
 .sync-update-card {
-  min-height: 64px;
+  position: relative;
+  min-height: 68px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 11px 13px 11px 14px;
+  padding: 12px 14px 12px 40px;
   border: 1px solid rgba(48, 55, 50, .12);
   border-radius: 14px;
   background: rgba(255, 255, 255, .97);
@@ -53,52 +52,80 @@
 .sync-update-card-copy {
   min-width: 0;
   display: grid;
-  gap: 3px;
+  gap: 4px;
 }
 
 .sync-update-card strong {
   color: #222824;
   font-size: 13px;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
-.sync-update-card span,
-.sync-update-card time {
+.sync-update-card span {
   color: #6e756f;
   font-size: 11px;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
-.sync-update-card time {
-  flex: 0 0 auto;
-  max-width: 88px;
-  text-align: right;
+.sync-update-card.notification-budget {
+  border-color: rgba(255, 59, 59, .24);
 }
 
-.sync-update-card.error {
-  border-color: rgba(255, 59, 59, .28);
-}
-
-.sync-update-card.error strong {
+.sync-update-card.notification-budget strong {
   color: #b92e2e;
 }
 
-.sync-update-card.live {
-  border-color: rgba(255, 59, 59, .18);
+.sync-update-card.notification-sync {
+  border-color: rgba(58, 198, 81, .28);
 }
 
 .sync-update-card.empty {
-  min-height: 70px;
+  min-height: 72px;
+  padding-left: 14px;
 }
 
-.sync-update-pulse {
-  width: 9px;
-  height: 9px;
-  flex: 0 0 auto;
+.sync-update-card.all-caught-up {
+  border-color: rgba(58, 198, 81, .22);
+}
+
+.notification-read-button {
+  position: absolute;
+  top: 9px;
+  left: 9px;
+  width: 23px;
+  height: 23px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
   border-radius: 50%;
-  background: #ff4e4e;
-  box-shadow: 0 0 0 0 rgba(255, 78, 78, .36);
-  animation: sync-update-pulse 1.6s ease-out infinite;
+  background: transparent;
+  color: #8b918c;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    color 150ms ease,
+    transform 150ms ease;
+}
+
+.notification-read-button svg {
+  width: 12px;
+  height: 12px;
+}
+
+.notification-read-button:hover,
+.notification-read-button:focus-visible {
+  background: rgba(42, 49, 44, .07);
+  color: #303630;
+}
+
+.notification-read-button:active {
+  transform: scale(.9);
+}
+
+.notification-read-button:focus-visible {
+  outline: 2px solid rgba(58, 198, 81, .28);
+  outline-offset: 2px;
 }
 
 .sync-updates-button {
@@ -109,14 +136,20 @@
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: linear-gradient(135deg, #FF3B3B 0%, #FF6161 100%);
+  background: var(--chewmash-accent-gradient);
   color: #fff;
-  box-shadow: 0 13px 30px rgba(255, 59, 59, .28);
+  box-shadow: 0 13px 30px rgba(58, 198, 81, .24);
   cursor: pointer;
   pointer-events: auto;
   transition:
     transform 180ms cubic-bezier(.22, 1, .36, 1),
+    background 220ms ease,
     box-shadow 180ms ease;
+}
+
+.sync-updates-button.has-unread {
+  background: linear-gradient(135deg, #FF3B3B 0%, #FF6161 100%);
+  box-shadow: 0 13px 30px rgba(255, 59, 59, .28);
 }
 
 .sync-updates-button svg {
@@ -127,6 +160,10 @@
 
 .sync-updates-button:hover {
   transform: translateY(-2px) scale(1.025);
+  box-shadow: 0 16px 34px rgba(58, 198, 81, .3);
+}
+
+.sync-updates-button.has-unread:hover {
   box-shadow: 0 16px 34px rgba(255, 59, 59, .34);
 }
 
@@ -135,18 +172,16 @@
 }
 
 .sync-updates-button:focus-visible {
-  outline: 3px solid rgba(255, 97, 97, .28);
+  outline: 3px solid rgba(58, 198, 81, .28);
   outline-offset: 4px;
+}
+
+.sync-updates-button.has-unread:focus-visible {
+  outline-color: rgba(255, 97, 97, .28);
 }
 
 .sync-updates-fab.open .sync-updates-button svg {
   transform: rotate(-8deg) scale(1.04);
-}
-
-@keyframes sync-update-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(255, 78, 78, .36); }
-  70% { box-shadow: 0 0 0 8px rgba(255, 78, 78, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 78, 78, 0); }
 }
 
 @media (max-width: 620px) {
@@ -156,18 +191,15 @@
   }
 
   .sync-updates-stack {
-    width: min(320px, calc(100vw - 32px));
+    width: min(328px, calc(100vw - 32px));
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .sync-updates-stack,
   .sync-updates-button,
-  .sync-updates-button svg {
+  .sync-updates-button svg,
+  .notification-read-button {
     transition: none;
-  }
-
-  .sync-update-pulse {
-    animation: none;
   }
 }
