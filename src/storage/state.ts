@@ -1,3 +1,4 @@
+import { DEFAULT_DINING_PLAN } from '../lib/diningPlans';
 import { dedupeTransactions } from '../lib/transactions';
 import type {
   AwayPeriod,
@@ -17,7 +18,7 @@ export interface ChewMashState {
 }
 
 export const DEFAULT_PLAN_SETTINGS: PlanSettings = {
-  startingBudget: 3295,
+  startingBudget: DEFAULT_DINING_PLAN.startingBudget,
   startDate: '2026-08-19',
   endDate: '2026-12-18',
   awayPeriods: [
