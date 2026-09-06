@@ -3,6 +3,7 @@ import type { PlanSettings } from '../../../../src/lib/types';
 import type { ChewMashState } from '../../../../src/storage/state';
 import { SectionCard } from '../../../../src/ui/components';
 import { money } from '../../../../src/ui/utils';
+import './account-page.css';
 
 export function AccountPage({ state, planDraft, setPlanDraft, updateAway, savePlan, exportBackup, importBackup, clearDiningData, logOut }: {
   state: ChewMashState;
