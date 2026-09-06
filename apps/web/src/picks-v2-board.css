@@ -46,6 +46,21 @@
   font-size: 11px;
 }
 
+.picks-v2-grid {
+  animation: picks-grid-enter .24s cubic-bezier(.22, 1, .36, 1);
+}
+
+@keyframes picks-grid-enter {
+  from {
+    opacity: .68;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .picks-v2-state {
   min-height: 240px;
   display: grid;
@@ -77,6 +92,39 @@
   font-size: 11px;
   line-height: 1.45;
   text-align: center;
+}
+
+.picks-refresh-row {
+  display: flex;
+  justify-content: center;
+  padding-top: 1px;
+}
+
+.picks-refresh-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 148px;
+  border-color: #c9dacd;
+  background: #fff;
+  color: #275c43;
+}
+
+.picks-refresh-button:hover:not(:disabled),
+.picks-refresh-button:focus-visible:not(:disabled) {
+  border-color: #9fc3a9;
+  background: #f7fbf7;
+}
+
+.picks-refresh-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .picks-v2-source {
@@ -118,5 +166,15 @@
   .picks-v2-source {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .picks-refresh-button {
+    width: min(100%, 220px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .picks-v2-grid {
+    animation: none;
   }
 }
