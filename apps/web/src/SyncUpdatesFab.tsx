@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { calculateBudgetStats } from '../../../src/lib/budget';
 import type { DiningTransaction } from '../../../src/lib/types';
 import type { ChewMashState } from '../../../src/storage/state';
-import { humanDate, money, spendOnDate } from '../../../src/ui/utils';
+import { webStateRepository } from '../../../src/storage/web';
+import { humanDate, latestBalanceSnapshot, localDate, money, spendOnDate } from '../../../src/ui/utils';
 import { GET_SYNC_HISTORY_EVENT, readGetSyncHistory } from './useGetConnector';
 
 const READ_NOTIFICATIONS_KEY = 'chewmash:read-notifications:v1';
@@ -17,25 +19,32 @@ interface NotificationItem {
   detail: string;
 }
 
-export function SyncUpdatesFab({
-  state,
-  today,
-  dailyTarget,
-}: {
-  state: ChewMashState;
-  today: string;
-  dailyTarget: number;
-}) {
+export function SyncUpdatesFab() {
   const [open, setOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [state, setState] = useState<ChewMashState | null>(null);
   const [syncHistory, setSyncHistory] = useState(() => readGetSyncHistory());
   const [readIds, setReadIds] = useState<Set<string>>(() => readNotificationIds());
 
+  const refreshDiningState = useCallback(async () => {
+    try {
+      setState(await webStateRepository.load());
+    } catch {
+      // The notification center is optional and should never block the dashboard.
+    }
+  }, []);
+
   useEffect(() => {
-    const refreshSyncHistory = () => setSyncHistory(readGetSyncHistory());
+    void refreshDiningState();
+
+    const refreshSyncHistory = () => {
+      setSyncHistory(readGetSyncHistory());
+      void refreshDiningState();
+    };
     const refreshStoredState = () => {
-      refreshSyncHistory();
+      setSyncHistory(readGetSyncHistory());
       setReadIds(readNotificationIds());
+      void refreshDiningState();
     };
 
     window.addEventListener(GET_SYNC_HISTORY_EVENT, refreshSyncHistory);
@@ -44,12 +53,15 @@ export function SyncUpdatesFab({
       window.removeEventListener(GET_SYNC_HISTORY_EVENT, refreshSyncHistory);
       window.removeEventListener('storage', refreshStoredState);
     };
-  }, []);
+  }, [refreshDiningState]);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+      void refreshDiningState();
+    }, 60_000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [refreshDiningState]);
 
   useEffect(() => {
     if (!open) return;
@@ -60,8 +72,20 @@ export function SyncUpdatesFab({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [open]);
 
+  const today = localDate();
+  const dailyTarget = useMemo(() => {
+    if (!state) return 0;
+    const snapshot = latestBalanceSnapshot(state.balanceSnapshots, today);
+    return calculateBudgetStats({
+      settings: state.plan,
+      transactions: state.transactions,
+      asOf: today,
+      balanceSnapshot: snapshot,
+    }).targetPerCampusDay;
+  }, [state, today]);
+
   const notifications = useMemo(
-    () => buildNotifications({ state, today, dailyTarget, syncHistory, now }),
+    () => state ? buildNotifications({ state, today, dailyTarget, syncHistory, now }) : [],
     [state, today, dailyTarget, syncHistory, now],
   );
   const unread = notifications.filter(notification => !readIds.has(notification.id));
@@ -97,7 +121,10 @@ export function SyncUpdatesFab({
         aria-label={open ? 'Hide notifications' : `Show notifications${hasUnread ? `, ${unread.length} unread` : ''}`}
         aria-expanded={open}
         aria-controls="sync-updates-panel"
-        onClick={() => setOpen(current => !current)}
+        onClick={() => {
+          if (!open) void refreshDiningState();
+          setOpen(current => !current);
+        }}
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
