@@ -1,10 +1,10 @@
 import type { MealPeriod } from './dineoncampus';
 import {
   LOCATION_BY_ID,
-  RECORDED_MENU_ITEMS,
   type PickType,
   type RecordedMenuItem,
 } from './grubhub';
+import { PICK_MENU_ITEMS } from './pickCatalog';
 
 export interface RecordedPick {
   item: RecordedMenuItem;
@@ -48,7 +48,7 @@ export function selectRecordedPicks(options: {
   openLocationIds: Set<string>;
   items?: RecordedMenuItem[];
 }): PickSelection {
-  const items = options.items ?? RECORDED_MENU_ITEMS;
+  const items = options.items ?? PICK_MENU_ITEMS;
   const scored = items
     .filter(item => options.openLocationIds.has(item.locationId))
     .filter(item => isEligibleAtPeriod(item, options.mealPeriod))
