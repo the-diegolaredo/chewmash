@@ -9,70 +9,98 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
-      - name: Probe Dine On Campus public APIs with browser-like CORS origin
+      - name: Verify Dine On Campus API from real Chrome on chewmash.app
         shell: bash
         run: |
           set -euo pipefail
-          origin='https://chewmash.app'
-          echo '--- sites/public ---'
-          curl -sS -D sites.headers -o sites.json \
-            -H "Origin: ${origin}" \
-            -H 'Accept: application/json, text/plain, */*' \
-            -H 'Sec-Fetch-Mode: cors' \
-            'https://apiv4.dineoncampus.com/sites/public'
-          head -40 sites.headers
-          echo 'body bytes:' $(wc -c < sites.json)
-          node - <<'NODE'
-          const fs = require('fs');
-          const raw = JSON.parse(fs.readFileSync('sites.json', 'utf8'));
-          const sites = Array.isArray(raw) ? raw : Array.isArray(raw?.sites) ? raw.sites : [];
-          const score = (site) => {
-            const name = String(site?.name ?? '').toLowerCase();
-            const slug = String(site?.slug ?? site?.short_name ?? site?.shortName ?? '').toLowerCase();
-            if (slug === 'calpoly' || slug === 'cal-poly') return 100;
-            if (name.includes('california polytechnic state university')) return 95;
-            if (name.includes('cal poly') && (name.includes('san luis') || name.includes('slo'))) return 90;
-            if (name === 'cal poly') return 80;
-            return 0;
-          };
-          sites.sort((a,b) => score(b)-score(a));
-          const winner = sites[0];
-          console.log('sites count:', sites.length);
-          console.log('best Cal Poly candidate:', JSON.stringify({id:winner?.id,name:winner?.name,slug:winner?.slug,score:score(winner)}));
-          if (!winner?.id || score(winner) <= 0) process.exit(2);
-          fs.writeFileSync('site-id.txt', String(winner.id));
-          NODE
-          site_id="$(cat site-id.txt)"
-          echo "site_id=${site_id}"
+          chrome="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
+          if [ -z "$chrome" ]; then
+            echo 'No Chrome/Chromium binary on runner.'
+            exit 1
+          fi
+          echo "Using ${chrome}"
+          "$chrome" \
+            --headless=new \
+            --no-sandbox \
+            --disable-dev-shm-usage \
+            --remote-debugging-port=9222 \
+            --user-data-dir=/tmp/picks-chrome \
+            'https://chewmash.app' >/tmp/chrome.log 2>&1 &
+          chrome_pid=$!
+          trap 'kill ${chrome_pid} 2>/dev/null || true' EXIT
 
-          for url in \
-            "https://apiv4.dineoncampus.com/locations/status_by_site?siteId=${site_id}" \
-            "https://apiv4.dineoncampus.com/locations/weekly_schedule?site_id=${site_id}" \
-            "https://apiv4.dineoncampus.com/locations/weekly_schedule?siteId=${site_id}"
-          do
-            echo "--- ${url} ---"
-            code=$(curl -sS -D probe.headers -o probe.json -w '%{http_code}' \
-              -H "Origin: ${origin}" \
-              -H 'Accept: application/json, text/plain, */*' \
-              -H 'Sec-Fetch-Mode: cors' \
-              "$url")
-            echo "status=${code} bytes=$(wc -c < probe.json)"
-            grep -Ei '^(access-control|content-type|cache-control|vary):' probe.headers || true
-            if [ "$code" = 200 ]; then
-              node - <<'NODE'
-              const fs = require('fs');
-              const value = JSON.parse(fs.readFileSync('probe.json','utf8'));
-              const describe = (v) => Array.isArray(v)
-                ? {type:'array', length:v.length, firstKeys:v[0] && typeof v[0] === 'object' ? Object.keys(v[0]).slice(0,20) : []}
-                : v && typeof v === 'object'
-                  ? {type:'object', keys:Object.keys(v).slice(0,30), arrayChildren:Object.fromEntries(Object.entries(v).filter(([,x])=>Array.isArray(x)).map(([k,x])=>[k,x.length]))}
-                  : {type:typeof v};
-              console.log(JSON.stringify(describe(value)));
-              const locs = Array.isArray(value) ? value : value?.theLocations ?? value?.locations ?? [];
-              console.log('sample locations:', JSON.stringify(locs.slice(0,5).map(x => ({name:x?.name,slug:x?.slug,id:x?.id,is_building:x?.is_building,keys:x && typeof x==='object'?Object.keys(x).slice(0,20):[]})), null, 2));
-              NODE
-            else
-              head -c 500 probe.json || true
-              echo
-            fi
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:9222/json >/tmp/tabs.json 2>/dev/null; then break; fi
+            sleep 1
           done
+          sleep 4
+
+          node - <<'NODE'
+          const tabs = await fetch('http://127.0.0.1:9222/json').then(r => r.json());
+          const tab = tabs.find(t => String(t.url).startsWith('https://chewmash.app')) ?? tabs[0];
+          if (!tab?.webSocketDebuggerUrl) throw new Error('Could not find ChewMash Chrome tab');
+          const ws = new WebSocket(tab.webSocketDebuggerUrl);
+          let nextId = 1;
+          const pending = new Map();
+          ws.onmessage = event => {
+            const msg = JSON.parse(event.data);
+            if (!msg.id) return;
+            const entry = pending.get(msg.id);
+            if (entry) { pending.delete(msg.id); entry(msg); }
+          };
+          await new Promise((resolve, reject) => {
+            ws.onopen = resolve;
+            ws.onerror = reject;
+          });
+          const call = (method, params = {}) => new Promise((resolve, reject) => {
+            const id = nextId++;
+            pending.set(id, msg => msg.error ? reject(new Error(JSON.stringify(msg.error))) : resolve(msg.result));
+            ws.send(JSON.stringify({id, method, params}));
+          });
+          await call('Runtime.enable');
+          const expression = `(async () => {
+            const result = { pageUrl: location.href, userAgent: navigator.userAgent };
+            try {
+              const response = await fetch('https://apiv4.dineoncampus.com/sites/public', {
+                method: 'GET',
+                headers: { Accept: 'application/json, text/plain, */*' },
+                cache: 'no-store'
+              });
+              const text = await response.text();
+              return {
+                ...result,
+                fetchSucceeded: true,
+                status: response.status,
+                ok: response.ok,
+                type: response.type,
+                contentType: response.headers.get('content-type'),
+                corsHeader: response.headers.get('access-control-allow-origin'),
+                preview: text.slice(0, 180)
+              };
+            } catch (error) {
+              return {
+                ...result,
+                fetchSucceeded: false,
+                errorName: error?.name ?? null,
+                error: String(error)
+              };
+            }
+          })()`;
+          const result = await call('Runtime.evaluate', {
+            expression,
+            awaitPromise: true,
+            returnByValue: true,
+          });
+          console.log('BROWSER_PROBE=' + JSON.stringify(result?.result?.value ?? result, null, 2));
+          ws.close();
+          NODE
+
+          echo '--- direct network check ---'
+          code=$(curl -sS -o /tmp/api-body -D /tmp/api-headers -w '%{http_code}' \
+            -H 'Origin: https://chewmash.app' \
+            -H 'Accept: application/json, text/plain, */*' \
+            'https://apiv4.dineoncampus.com/sites/public' || true)
+          echo "HTTP ${code}"
+          grep -Ei '^(cf-mitigated|access-control-allow-origin|content-type|server):' /tmp/api-headers || true
+          head -c 100 /tmp/api-body || true
+          echo
