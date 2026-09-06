@@ -38,6 +38,21 @@ describe('recorded Picks engine', () => {
     expect(result.counts).toEqual({ fast: 3, drink: 2, healthy: 4 });
   });
 
+  it('refreshes to a different eligible set while preserving the category contract', () => {
+    const items: RecordedMenuItem[] = [
+      ...Array.from({ length: 6 }, (_, index) => item(`f${index + 1}`, 'fast', `f-loc-${index + 1}`, 8)),
+      ...Array.from({ length: 4 }, (_, index) => item(`d${index + 1}`, 'drink', `d-loc-${index + 1}`, 6)),
+      ...Array.from({ length: 8 }, (_, index) => item(`h${index + 1}`, 'healthy', `h-loc-${index + 1}`, 7)),
+    ];
+    const openLocationIds = new Set(items.map(value => value.locationId));
+    const first = selectRecordedPicks({ items, remainingToday: 25, mealPeriod: 'lunch', openLocationIds, variant: 0 });
+    const refreshed = selectRecordedPicks({ items, remainingToday: 25, mealPeriod: 'lunch', openLocationIds, variant: 1 });
+
+    expect(refreshed.counts).toEqual({ fast: 3, drink: 2, healthy: 4 });
+    expect(refreshed.picks.every(pick => pick.fitsBudget)).toBe(true);
+    expect(refreshed.picks.map(pick => pick.item.id)).not.toEqual(first.picks.map(pick => pick.item.id));
+  });
+
   it('never recommends a closed location', () => {
     const items = [
       item('open', 'fast', 'open-location', 8),
