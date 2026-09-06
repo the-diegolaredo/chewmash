@@ -4,7 +4,6 @@ import { isSupportedDiningPlanBudget } from '../../../src/lib/diningPlans';
 import type { PlanSettings } from '../../../src/lib/types';
 import { parseCbordPdfFile } from '../../../src/pdf/cbord';
 import { sanitizeState, type ChewMashState } from '../../../src/storage/state';
-import { migrateLegacyWebState, webStateRepository } from '../../../src/storage/web';
 import { latestBalanceSnapshot, localDate, money, spendOnDate } from '../../../src/ui/utils';
 import { ConnectorSummary } from './components/ConnectorSummary';
 import { AccountPage } from './pages/AccountPage';
@@ -18,6 +17,7 @@ import {
   reloadWebApp,
   requestPersistentBrowserStorage,
 } from './platform/browser';
+import { loadInitialState, stateRepository } from './platform/state';
 import { PicksPage } from './PicksPage';
 import { useGetConnector, type GetConnectorModel } from './useGetConnector';
 import { WebFloatingNav, type WebPrimaryView } from './WebFloatingNav';
@@ -37,7 +37,7 @@ export function App() {
 
   const refresh = useCallback(async () => {
     try {
-      const next = await migrateLegacyWebState();
+      const next = await loadInitialState();
       setState(next);
       setError(null);
     } catch (reason) {
@@ -74,10 +74,10 @@ export function App() {
       for (const file of files) {
         try {
           const parsed = await parseCbordPdfFile(file);
-          const before = await webStateRepository.load();
-          let after = await webStateRepository.mergeTransactions(parsed.transactions);
+          const before = await stateRepository.load();
+          let after = await stateRepository.mergeTransactions(parsed.transactions);
           const added = Math.max(0, after.transactions.length - before.transactions.length);
-          if (parsed.balanceSnapshot) after = await webStateRepository.addBalanceSnapshot(parsed.balanceSnapshot);
+          if (parsed.balanceSnapshot) after = await stateRepository.addBalanceSnapshot(parsed.balanceSnapshot);
           messages.push(`${file.name}: ${added} new purchase${added === 1 ? '' : 's'}${parsed.balanceSnapshot ? ` · balance ${money(parsed.balanceSnapshot.balance)}` : ''}`);
           setState(after);
         } catch (reason) {
@@ -106,7 +106,7 @@ export function App() {
       ...planDraft,
       awayPeriods: planDraft.awayPeriods.filter(period => period.start && period.end && period.start <= period.end),
     };
-    const next = await webStateRepository.updatePlan(clean);
+    const next = await stateRepository.updatePlan(clean);
     setState(next);
     setPlanDraft({ ...next.plan, awayPeriods: next.plan.awayPeriods.map(period => ({ ...period })) });
     setError(null);
@@ -126,7 +126,7 @@ export function App() {
   async function importBackup(file: File) {
     try {
       const next = sanitizeState(JSON.parse(await file.text()));
-      const saved = await webStateRepository.save(next);
+      const saved = await stateRepository.save(next);
       setState(saved);
       setPlanDraft({ ...saved.plan, awayPeriods: saved.plan.awayPeriods.map(period => ({ ...period })) });
       setError(null);
@@ -137,14 +137,14 @@ export function App() {
 
   async function clearDiningData() {
     if (!confirmClearDiningData()) return;
-    setState(await webStateRepository.clearDiningData());
+    setState(await stateRepository.clearDiningData());
     setPdfMessage(null);
   }
 
   async function logOut() {
     if (!confirmLogOut()) return;
     clearLegacyBrowserState();
-    await webStateRepository.reset();
+    await stateRepository.reset();
     reloadWebApp();
   }
 
