@@ -84,8 +84,8 @@ export function App() {
 
   async function savePlan() {
     if (!planDraft) return;
-    if (!Number.isFinite(planDraft.startingBudget) || planDraft.startingBudget <= 0) {
-      setError('Starting budget must be greater than $0.');
+    if (![3709, 3295, 2908].includes(planDraft.startingBudget)) {
+      setError('Choose one of the available first-year dining plans.');
       return;
     }
     if (!planDraft.startDate || !planDraft.endDate || planDraft.startDate > planDraft.endDate) {
@@ -460,13 +460,35 @@ function AccountPage({ state, planDraft, setPlanDraft, updateAway, savePlan, exp
   if (!planDraft) return null;
   const awaySlots = Array.from({ length: 3 }, (_, index) => planDraft.awayPeriods[index] ?? { start: '', end: '' });
   const transactions = [...state.transactions].sort((left, right) => `${right.date} ${right.time ?? ''}`.localeCompare(`${left.date} ${left.time ?? ''}`));
+  const standardDiningPlanSelected = [3709, 3295, 2908].includes(planDraft.startingBudget);
 
   return (
     <div className="page-stack">
       <div className="page-title-row"><div><p className="eyebrow">Plan details and privacy controls</p><h1>Account</h1></div></div>
       <SectionCard title="Plan settings">
         <div className="form-grid">
-          <label>Starting Dining Dollars<input type="number" min="0" step="0.01" value={planDraft.startingBudget} onChange={event => setPlanDraft({ ...planDraft, startingBudget: Number(event.target.value) })} /></label>
+          <label>
+            Dining plan
+            <select
+              value={String(planDraft.startingBudget)}
+              onChange={event => setPlanDraft({ ...planDraft, startingBudget: Number(event.target.value) })}
+              style={{
+                width: '100%',
+                minHeight: 40,
+                padding: '8px 10px',
+                border: '1px solid #cdd3db',
+                borderRadius: 5,
+                background: '#fff',
+                color: '#242a30',
+                font: 'inherit',
+              }}
+            >
+              {!standardDiningPlanSelected ? <option value={String(planDraft.startingBudget)} disabled>Choose your dining plan</option> : null}
+              <option value="3709">First-Year Max — $3,709 Dining Dollars</option>
+              <option value="3295">First-Year Plus — $3,295 Dining Dollars</option>
+              <option value="2908">First-Year Limited — $2,908 Dining Dollars</option>
+            </select>
+          </label>
           <label>Plan starts<input type="date" value={planDraft.startDate} onChange={event => setPlanDraft({ ...planDraft, startDate: event.target.value })} /></label>
           <label>Plan ends<input type="date" value={planDraft.endDate} onChange={event => setPlanDraft({ ...planDraft, endDate: event.target.value })} /></label>
         </div>
