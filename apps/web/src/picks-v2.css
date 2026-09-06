@@ -1,0 +1,262 @@
+.picks-v2-page {
+  padding-bottom: 24px;
+}
+
+.picks-v2-heading {
+  text-align: center;
+}
+
+.picks-v2-heading h1 {
+  margin-inline: auto;
+}
+
+.picks-v2-heading .subtle {
+  max-width: 680px;
+  margin: 8px auto 0;
+}
+
+.picks-v2-context {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #d9e3dc;
+  border-radius: 14px;
+  background: #f8faf9;
+}
+
+.picks-v2-context > div {
+  display: grid;
+  gap: 4px;
+  text-align: center;
+}
+
+.picks-v2-context span {
+  color: #68766e;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.picks-v2-context strong {
+  color: #173f30;
+  font-size: 15px;
+}
+
+.picks-v2-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.pick-v2-card {
+  position: relative;
+  min-height: 188px;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  align-items: center;
+  overflow: hidden;
+  padding: 26px 18px 16px;
+  border: 1px solid #d7dfda;
+  border-radius: 14px;
+  background: #fff;
+  color: #23382f;
+  text-align: center;
+  box-shadow: 0 7px 20px rgba(29, 66, 50, .055);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+button.pick-v2-card {
+  cursor: pointer;
+}
+
+button.pick-v2-card:hover,
+button.pick-v2-card:focus-visible {
+  transform: translateY(-3px);
+  border-color: #b9cec1;
+  box-shadow: 0 12px 28px rgba(29, 66, 50, .11);
+}
+
+.pick-v2-center {
+  display: grid;
+  gap: 8px;
+  place-items: center;
+}
+
+.pick-v2-name {
+  max-width: 260px;
+  color: #173f30;
+  font-size: clamp(18px, 2.2vw, 24px);
+  line-height: 1.12;
+  letter-spacing: -.025em;
+}
+
+.pick-v2-price {
+  color: #1d593f;
+  font-size: 17px;
+  font-weight: 850;
+}
+
+.pick-v2-restaurant {
+  color: #6b786f;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pick-v2-fit,
+.pick-v2-over {
+  margin-top: 14px;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.pick-v2-fit { color: #4d735e; }
+.pick-v2-over { color: #a84f4f; }
+
+.pick-pennon {
+  position: absolute;
+  top: 0;
+  left: 14px;
+  width: 36px;
+  height: 49px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 77%, 0 100%);
+  filter: drop-shadow(0 3px 5px rgba(20, 38, 30, .16));
+}
+
+.pick-pennon svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pick-pennon-fast {
+  background: linear-gradient(135deg, #FF9E37 0%, #FFBD6C 100%);
+}
+
+.pick-pennon-drink {
+  background: linear-gradient(135deg, #C92CF5 0%, #F98EFF 100%);
+}
+
+.pick-pennon-healthy {
+  background: linear-gradient(135deg, #27C5FF 0%, #59E2F7 100%);
+}
+
+.pick-v2-placeholder {
+  border-style: dashed;
+  background: #fafcfb;
+  color: #718078;
+}
+
+.pick-v2-placeholder strong {
+  color: #52665b;
+}
+
+.pick-v2-placeholder span {
+  max-width: 250px;
+  margin: 6px auto 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.pick-for-me-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px 24px;
+  align-items: center;
+  padding: 24px;
+  border: 1px solid #cfe0d4;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(58, 198, 81, .10), rgba(202, 250, 65, .16));
+}
+
+.pick-for-me-panel h2 {
+  margin-top: 4px;
+  color: #173f30;
+  font-size: 24px;
+}
+
+.pick-for-me-panel p:not(.eyebrow) {
+  margin-top: 6px;
+  color: #607269;
+  font-size: 13px;
+}
+
+.pick-for-me-button {
+  min-width: 142px;
+}
+
+.pick-for-me-result {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 3px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(80, 130, 94, .18);
+}
+
+.pick-for-me-result strong {
+  color: #173f30;
+}
+
+.pick-for-me-result span {
+  color: #607269;
+  font-size: 12px;
+}
+
+.pick-detail-restaurant {
+  color: #4d735e;
+  font-weight: 800;
+}
+
+.pick-directions {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.pick-directions > strong {
+  color: #173f30;
+}
+
+.pick-directions a {
+  text-decoration: none;
+}
+
+@media (max-width: 820px) {
+  .picks-v2-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .picks-v2-context {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .picks-v2-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pick-v2-card {
+    min-height: 160px;
+  }
+
+  .pick-for-me-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .pick-for-me-button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pick-v2-card {
+    transition: none;
+  }
+}
