@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { GRUBHUB_PICK_ITEMS, type PickType } from '../../../src/menu/grubhubCatalog';
+import { openRestaurantIdsAt } from '../../../src/menu/locationHours';
 import { buildPicks, mealPeriodForMoment, randomSolidPick, type PickRecommendation } from '../../../src/menu/pickEngineV2';
 import { MetricDetailModal, SectionCard } from '../../../src/ui/components';
 import { money } from '../../../src/ui/utils';
@@ -22,13 +23,15 @@ export function PicksPage({
   const [randomPick, setRandomPick] = useState<PickRecommendation | null>(null);
   const now = new Date();
   const mealPeriod = mealPeriodForMoment(now);
+  const openRestaurantIds = openRestaurantIdsAt(now);
 
-  // Hours filtering is intentionally a separate input to the recommendation
-  // engine. The current page remains hidden until the Cal Poly hours catalog is
-  // normalized, at which point this becomes a Set of restaurants open now.
   const selection = useMemo(
-    () => buildPicks(GRUBHUB_PICK_ITEMS, { now, remainingToday }),
-    [remainingToday, now.getHours()],
+    () => buildPicks(GRUBHUB_PICK_ITEMS, {
+      now,
+      remainingToday,
+      openRestaurantIds: openRestaurantIds ?? undefined,
+    }),
+    [remainingToday, now.getHours(), openRestaurantIds?.size],
   );
 
   void connector;
