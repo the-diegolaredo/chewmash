@@ -36,7 +36,7 @@ export function AccountPage({ state, planDraft, setPlanDraft, updateAway, savePl
               {!selectedPlan ? <option value={String(planDraft.startingBudget)} disabled>Choose your dining plan</option> : null}
               {DINING_PLANS.map(plan => (
                 <option key={plan.id} value={String(plan.startingBudget)}>
-                  {plan.name} — {money(plan.startingBudget)} Dining Dollars
+                  {plan.name} — ${plan.startingBudget.toLocaleString('en-US')} Dining Dollars
                 </option>
               ))}
             </select>
