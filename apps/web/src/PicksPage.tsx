@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { locationForItem, PICK_LOCATIONS, type PickType } from '../../../src/menu/grubhub';
+import { formatClosingTime, openStatusesForLocations } from '../../../src/menu/hours';
 import {
-  fetchCalPolyWeeklyHours,
-  formatClosingTime,
-  openStatusesForLocations,
-  type WeeklyHoursSchedule,
-} from '../../../src/menu/hours';
+  buildRecordedCalPolyHours,
+  RECORDED_HOURS_SOURCE_LABEL,
+} from '../../../src/menu/recordedHours';
 import {
   mealPeriodForHour,
   mealPeriodLabel,
@@ -30,11 +29,9 @@ export function PicksPage({
   connector: GetConnectorModel;
   onGoHome: () => void;
 }) {
-  const [schedule, setSchedule] = useState<WeeklyHoursSchedule | null>(null);
-  const [hoursError, setHoursError] = useState<string | null>(null);
-  const [hoursLoading, setHoursLoading] = useState(false);
   const [selected, setSelected] = useState<RecordedPick | null>(null);
   const [randomPick, setRandomPick] = useState<RecordedPick | null>(null);
+  const [refreshVersion, setRefreshVersion] = useState(0);
   const [now, setNow] = useState(() => new Date());
   const mealPeriod = mealPeriodForHour(now.getHours());
 
@@ -42,66 +39,39 @@ export function PicksPage({
   // Student Grubhub recordings are the source of item names/prices/details.
   void connector;
 
-  const loadHours = useCallback(async () => {
-    const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 10_000);
-    setHoursLoading(true);
-    setHoursError(null);
-    try {
-      const result = await fetchCalPolyWeeklyHours({ signal: controller.signal });
-      setSchedule(result);
-    } catch (reason) {
-      setSchedule(null);
-      setHoursError(
-        reason instanceof Error && reason.name !== 'AbortError'
-          ? reason.message
-          : 'Cal Poly dining hours did not respond in time.',
-      );
-    } finally {
-      window.clearTimeout(timeout);
-      setHoursLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadHours();
-  }, [loadHours]);
-
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 60_000);
     return () => window.clearInterval(timer);
   }, []);
 
+  const schedule = useMemo(() => buildRecordedCalPolyHours(now), [now]);
   const statuses = useMemo(
-    () => schedule ? openStatusesForLocations(schedule, PICK_LOCATIONS, now) : null,
+    () => openStatusesForLocations(schedule, PICK_LOCATIONS, now),
     [schedule, now],
   );
 
-  const openLocationIds = useMemo(() => {
-    if (!statuses) return new Set<string>();
-    return new Set(
-      [...statuses.values()]
-        .filter(status => status.open)
-        .map(status => status.locationId),
-    );
-  }, [statuses]);
+  const openLocationIds = useMemo(() => new Set(
+    [...statuses.values()]
+      .filter(status => status.open)
+      .map(status => status.locationId),
+  ), [statuses]);
 
   const selection = useMemo(
     () => selectRecordedPicks({
       remainingToday,
       mealPeriod,
       openLocationIds,
+      variant: refreshVersion,
     }),
-    [mealPeriod, openLocationIds, remainingToday],
+    [mealPeriod, openLocationIds, refreshVersion, remainingToday],
   );
 
   if (!hasDiningData) {
     return (
       <div className="page-stack picks-page picks-v2-page">
         <div className="picks-heading picks-v2-heading">
-          <p className="eyebrow">Picks</p>
-          <h1>Meals that fit your day.</h1>
-          <p className="subtle">Connect dining data first so chewmash knows how much you have left to spend today.</p>
+          <h1>Picks</h1>
+          <p className="subtle">Good food, right now — matched to your budget, the time, and what’s open.</p>
         </div>
         <SectionCard title="Finish setup first">
           <p className="section-copy">Picks uses your Dining Dollars target to choose options that fit the current meal period and your remaining budget.</p>
@@ -114,72 +84,69 @@ export function PicksPage({
   return (
     <div className="page-stack picks-page picks-v2-page">
       <div className="picks-heading picks-v2-heading">
-        <p className="eyebrow">Picks</p>
-        <h1>Nine ideas for right now.</h1>
-        <p className="subtle">Built around {mealPeriodLabel(mealPeriod).toLowerCase()}, your remaining Dining Dollars, and restaurants that are open now.</p>
+        <h1>Picks</h1>
+        <p className="subtle">Good food, right now — matched to your budget, the time, and what’s open.</p>
       </div>
 
       <div className="picks-v2-context" aria-label="Pick context">
         <div><span>Left today</span><strong>{money(remainingToday)}</strong></div>
         <div><span>Meal time</span><strong>{mealPeriodLabel(mealPeriod)}</strong></div>
-        <div><span>Open places matched</span><strong>{hoursLoading ? '…' : openLocationIds.size}</strong></div>
+        <div><span>Open places</span><strong>{openLocationIds.size}</strong></div>
       </div>
 
       <section className="picks-v2-board" aria-labelledby="picks-grid-title">
         <div className="picks-v2-board-heading">
           <div>
-            <p className="eyebrow">Your 9</p>
-            <h2 id="picks-grid-title">Picks for right now</h2>
-          </div>
-          <div className="picks-v2-mix" aria-label="Pick mix">
-            <span><b>3</b> fast</span>
-            <span><b>2</b> drinks</span>
-            <span><b>4</b> healthy</span>
+            <p className="eyebrow">Recommended</p>
+            <h2 id="picks-grid-title">For right now</h2>
           </div>
         </div>
 
-        {hoursLoading && !schedule ? (
-          <div className="picks-v2-state">Checking current Cal Poly dining hours…</div>
-        ) : hoursError ? (
-          <div className="picks-v2-state picks-v2-error">
-            <strong>Hours aren’t available right now.</strong>
-            <span>{hoursError}</span>
-            <span>ChewMash will not guess that a restaurant is open.</span>
-            <button className="secondary-button" type="button" onClick={() => void loadHours()}>Try hours again</button>
-          </div>
-        ) : (
-          <>
-            <div className="picks-v2-grid" aria-label="Today’s nine Picks">
-              {selection.picks.map(pick => {
-                const status = statuses?.get(pick.item.locationId);
-                return (
-                  <PickCard
-                    key={pick.item.id}
-                    pick={pick}
-                    closesAt={status?.closesAt ?? null}
-                    onOpen={() => setSelected(pick)}
-                  />
-                );
-              })}
-              {selection.picks.length < 9 ? Array.from({ length: 9 - selection.picks.length }, (_, index) => (
-                <div className="pick-v2-card pick-v2-placeholder" key={`placeholder-${index}`}>
-                  <strong>No qualifying open option</strong>
-                  <span>ChewMash won’t fill a slot with a closed restaurant or a generic bottled/fountain drink.</span>
-                </div>
-              )) : null}
+        <div className="picks-v2-grid" key={`picks-grid-${refreshVersion}`} aria-label="Today’s Picks">
+          {selection.picks.map(pick => {
+            const status = statuses.get(pick.item.locationId);
+            return (
+              <PickCard
+                key={pick.item.id}
+                pick={pick}
+                closesAt={status?.closesAt ?? null}
+                onOpen={() => setSelected(pick)}
+              />
+            );
+          })}
+          {selection.picks.length < 9 ? Array.from({ length: 9 - selection.picks.length }, (_, index) => (
+            <div className="pick-v2-card pick-v2-placeholder" key={`placeholder-${index}`}>
+              <strong>No qualifying open option</strong>
+              <span>ChewMash won’t fill a slot with a closed restaurant or a generic bottled/fountain drink.</span>
             </div>
+          )) : null}
+        </div>
 
-            {selection.picks.length < 9 ? (
-              <p className="picks-v2-availability-note">
-                {selection.picks.length} verified pick{selection.picks.length === 1 ? '' : 's'} available at this hour. Empty slots are safer than recommending a closed location.
-              </p>
-            ) : null}
-          </>
-        )}
+        {selection.picks.length < 9 ? (
+          <p className="picks-v2-availability-note">
+            Some slots are unavailable at this hour. ChewMash leaves them empty rather than recommending a closed location.
+          </p>
+        ) : null}
+
+        <div className="picks-refresh-row">
+          <button
+            className="secondary-button picks-refresh-button"
+            type="button"
+            disabled={!selection.picks.length}
+            onClick={() => {
+              setRefreshVersion(version => version + 1);
+              setRandomPick(null);
+              setSelected(null);
+            }}
+          >
+            <RefreshIcon />
+            Refresh picks
+          </button>
+        </div>
 
         <div className="picks-v2-source">
           <span>Menus: student Grubhub recordings</span>
-          <span>Hours: Cal Poly Dine On Campus{schedule ? ` · checked ${new Date(schedule.fetchedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : ''}</span>
+          <span>Hours: {RECORDED_HOURS_SOURCE_LABEL}</span>
         </div>
       </section>
 
@@ -192,7 +159,7 @@ export function PicksPage({
         <button
           className="primary-button pick-for-me-button"
           type="button"
-          disabled={!selection.picks.length || Boolean(hoursError)}
+          disabled={!selection.picks.length}
           onClick={() => {
             const pool = solidPickPool(selection.picks);
             const result = pool[Math.floor(Math.random() * pool.length)] ?? null;
@@ -270,8 +237,16 @@ function PickDetails({ pick, onClose }: { pick: RecordedPick; onClose: () => voi
           <a className="secondary-button" href={openStreetMapUrl(location.mapQuery)} target="_blank" rel="noreferrer">OpenStreetMap</a>
         </div>
       </div>
-      <small className="detail-source">Menu details come from the supplied student Grubhub recordings. Dietary, portion, and calorie information is shown only when it was visible in those recordings. Current availability is matched against Cal Poly’s Dine On Campus hours.</small>
+      <small className="detail-source">Menu details come from the supplied student Grubhub recordings. Dietary, portion, and calorie information is shown only when it was visible in those recordings. Availability is checked against the recorded official Cal Poly hours for this week.</small>
     </MetricDetailModal>
+  );
+}
+
+function RefreshIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20 6v5h-5M4 18v-5h5M18.2 9A7 7 0 0 0 6.7 6.8L4 9m16 6-2.7 2.2A7 7 0 0 1 5.8 15" />
+    </svg>
   );
 }
 
