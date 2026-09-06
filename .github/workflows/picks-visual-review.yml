@@ -1,0 +1,47 @@
+name: Picks visual review
+
+on:
+  push:
+    branches:
+      - picks-catalog-hours-validation
+
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install
+      - name: Start Vite preview fixture
+        shell: bash
+        run: |
+          npm run dev:web -- --host 127.0.0.1 > /tmp/vite.log 2>&1 &
+          echo $! > /tmp/vite.pid
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:5173/picks-review.html >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/vite.log
+          exit 1
+      - name: Capture desktop and phone review
+        shell: bash
+        run: |
+          chrome="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium)"
+          "$chrome" --headless=new --no-sandbox --disable-dev-shm-usage \
+            --hide-scrollbars --window-size=1440,1500 \
+            --screenshot=picks-desktop.png \
+            http://127.0.0.1:5173/picks-review.html
+          "$chrome" --headless=new --no-sandbox --disable-dev-shm-usage \
+            --hide-scrollbars --window-size=390,1600 \
+            --screenshot=picks-phone.png \
+            http://127.0.0.1:5173/picks-review.html
+          file picks-desktop.png picks-phone.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: picks-visual-review
+          path: |
+            picks-desktop.png
+            picks-phone.png
