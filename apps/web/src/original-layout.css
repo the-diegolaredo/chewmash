@@ -109,12 +109,12 @@
   }
 }
 
-/* Original floating two-tab pill, using the requested bright ChewMash gradient. */
+/* Floating three-tab pill, using the requested bright ChewMash gradient. */
 .web-floating-nav {
-  width: min(310px, calc(100% - 36px));
+  width: min(390px, calc(100% - 36px));
   height: 64px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 5px;
   bottom: max(18px, env(safe-area-inset-bottom));
   padding: 6px;
