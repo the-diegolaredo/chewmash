@@ -9,6 +9,10 @@
     "build": "wxt build",
     "build:web": "vite build --config apps/web/vite.config.ts",
     "preview:web": "vite preview --config apps/web/vite.config.ts",
+    "mobile:add:ios": "npm run build:web && cd apps/mobile && npx cap add ios",
+    "mobile:sync": "npm run build:web && cd apps/mobile && npx cap sync ios",
+    "mobile:open:ios": "cd apps/mobile && npx cap open ios",
+    "mobile:doctor": "cd apps/mobile && npx cap doctor",
     "zip": "wxt zip",
     "prepare": "wxt prepare",
     "test": "vitest run",
@@ -16,10 +20,13 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.1",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^4.3.4",
