@@ -11,6 +11,7 @@ import { MobileUploadPage } from './pages/MobileUploadPage';
 import { downloadBackup, requestPersistentBrowserStorage } from './platform/browser';
 import { loadInitialState, stateRepository } from './platform/state';
 import { PicksPage } from './PicksPage';
+import type { GetConnectorModel } from './useGetConnector';
 import { useMobileGetSync, type MobileGetSyncModel } from './useMobileGetSync';
 import { WebFloatingNav, type WebPrimaryView } from './WebFloatingNav';
 
@@ -26,6 +27,18 @@ export function MobileApp() {
   const pdfInput = useRef<HTMLInputElement>(null);
   const backupInput = useRef<HTMLInputElement>(null);
   const mobileSync = useMobileGetSync(setState);
+
+  const picksConnector = useMemo<GetConnectorModel>(() => ({
+    installed: true,
+    checking: false,
+    busy: mobileSync.busy,
+    version: 'ios',
+    message: mobileSync.message,
+    syncStatus: mobileSync.syncStatus,
+    syncHistory: mobileSync.syncStatus ? [mobileSync.syncStatus] : [],
+    connect: mobileSync.connect,
+    fetchMenu: async () => null,
+  }), [mobileSync.busy, mobileSync.connect, mobileSync.message, mobileSync.syncStatus]);
 
   const refresh = useCallback(async () => {
     try {
@@ -177,6 +190,7 @@ export function MobileApp() {
           today={today}
           remainingToday={dailyTargetRemaining(stats.targetPerCampusDay, spendOnDate(state.transactions, today))}
           hasDiningData={hasDiningData}
+          connector={picksConnector}
           onGoHome={() => setView('home')}
         />
       ) : view === 'home' ? (
@@ -200,7 +214,6 @@ export function MobileApp() {
           importBackup={() => backupInput.current?.click()}
           clearDiningData={clearDiningData}
           logOut={logOut}
-          native
         />
       )}
 
