@@ -25,6 +25,12 @@ const QUOTAS: Record<PickType, number> = {
   healthy: 4,
 };
 
+const VARIANT_STEPS: Record<PickType, number> = {
+  fast: 2,
+  drink: 3,
+  healthy: 5,
+};
+
 export function mealPeriodForHour(hour: number): MealPeriod {
   if (!Number.isFinite(hour)) return 'other';
   if (hour >= 5 && hour < 10) return 'breakfast';
@@ -47,8 +53,10 @@ export function selectRecordedPicks(options: {
   mealPeriod: MealPeriod;
   openLocationIds: Set<string>;
   items?: RecordedMenuItem[];
+  variant?: number;
 }): PickSelection {
   const items = options.items ?? PICK_MENU_ITEMS;
+  const variant = Math.max(0, Math.floor(options.variant ?? 0));
   const scored = items
     .filter(item => options.openLocationIds.has(item.locationId))
     .filter(item => isEligibleAtPeriod(item, options.mealPeriod))
@@ -62,7 +70,8 @@ export function selectRecordedPicks(options: {
     const candidates = scored
       .filter(pick => pick.item.type === type)
       .sort(comparePicks);
-    const selected = chooseWithRestaurantVariety(candidates, QUOTAS[type]);
+    const ordered = orderForVariant(candidates, QUOTAS[type], variant, type);
+    const selected = chooseWithRestaurantVariety(ordered, QUOTAS[type]);
     picks.push(...selected);
     counts[type] = selected.length;
   }
@@ -75,6 +84,29 @@ export function solidPickPool(picks: RecordedPick[]): RecordedPick[] {
   if (!solid.length) return picks;
   const affordable = solid.filter(pick => pick.fitsBudget);
   return affordable.length ? affordable : solid;
+}
+
+function orderForVariant(
+  candidates: RecordedPick[],
+  limit: number,
+  variant: number,
+  type: PickType,
+): RecordedPick[] {
+  if (variant <= 0 || candidates.length <= limit) return candidates;
+
+  // Refreshes only rotate through strong candidates. If there are enough
+  // affordable choices to fill the category, an over-budget option never gets
+  // promoted just for novelty.
+  const affordable = candidates.filter(pick => pick.fitsBudget);
+  const preferred = affordable.length >= limit ? affordable : candidates;
+  const poolSize = Math.min(preferred.length, Math.max(limit + 1, limit * 3));
+  const pool = preferred.slice(0, poolSize);
+  if (pool.length <= 1) return candidates;
+
+  const offset = (variant * VARIANT_STEPS[type]) % pool.length;
+  const rotated = [...pool.slice(offset), ...pool.slice(0, offset)];
+  const poolSet = new Set(pool);
+  return [...rotated, ...candidates.filter(pick => !poolSet.has(pick))];
 }
 
 function chooseWithRestaurantVariety(candidates: RecordedPick[], limit: number): RecordedPick[] {
