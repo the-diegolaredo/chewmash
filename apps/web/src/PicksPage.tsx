@@ -69,9 +69,11 @@ export function PicksPage({
   if (!hasDiningData) {
     return (
       <div className="page-stack picks-page picks-v2-page">
-        <div className="picks-heading picks-v2-heading">
-          <h1>Picks</h1>
-          <p className="subtle">Good food, right now — matched to your budget, the time, and what’s open.</p>
+        <div className="page-title-row">
+          <div>
+            <p className="eyebrow">good food, right now</p>
+            <h1>Picks</h1>
+          </div>
         </div>
         <SectionCard title="Finish setup first">
           <p className="section-copy">Picks uses your Dining Dollars target to choose options that fit the current meal period and your remaining budget.</p>
@@ -83,9 +85,11 @@ export function PicksPage({
 
   return (
     <div className="page-stack picks-page picks-v2-page">
-      <div className="picks-heading picks-v2-heading">
-        <h1>Picks</h1>
-        <p className="subtle">Good food, right now — matched to your budget, the time, and what’s open.</p>
+      <div className="page-title-row">
+        <div>
+          <p className="eyebrow">good food, right now</p>
+          <h1>Picks</h1>
+        </div>
       </div>
 
       <div className="picks-v2-context" aria-label="Pick context">
@@ -232,9 +236,8 @@ function PickDetails({ pick, onClose }: { pick: RecordedPick; onClose: () => voi
       <div className="pick-directions">
         <strong>Directions</strong>
         <div className="button-row">
-          <a className="primary-button" href={googleMapsUrl(location.mapQuery)} target="_blank" rel="noreferrer">Google Maps</a>
+          <a className="primary-button pick-directions-primary" href={googleMapsUrl(location.mapQuery)} target="_blank" rel="noreferrer">Google Maps</a>
           <a className="secondary-button" href={appleMapsUrl(location.mapQuery)} target="_blank" rel="noreferrer">Apple Maps</a>
-          <a className="secondary-button" href={openStreetMapUrl(location.mapQuery)} target="_blank" rel="noreferrer">OpenStreetMap</a>
         </div>
       </div>
       <small className="detail-source">Menu details come from the supplied student Grubhub recordings. Dietary, portion, and calorie information is shown only when it was visible in those recordings. Availability is checked against the recorded official Cal Poly hours for this week.</small>
@@ -272,8 +275,4 @@ function googleMapsUrl(query: string): string {
 
 function appleMapsUrl(query: string): string {
   return `https://maps.apple.com/?daddr=${encodeURIComponent(query)}`;
-}
-
-function openStreetMapUrl(query: string): string {
-  return `https://www.openstreetmap.org/search?query=${encodeURIComponent(query)}`;
 }
