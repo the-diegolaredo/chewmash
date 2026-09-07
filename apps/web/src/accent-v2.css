@@ -1,0 +1,133 @@
+:root {
+  --chewmash-accent-start: #2ec647;
+  --chewmash-accent-end: #b8ff09;
+  --chewmash-accent-gradient: linear-gradient(135deg, var(--chewmash-accent-start) 0%, var(--chewmash-accent-end) 100%);
+  --chewmash-accent-soft: rgba(46, 198, 71, .11);
+  --chewmash-accent-soft-2: rgba(184, 255, 9, .16);
+  --chewmash-focus: rgba(46, 198, 71, .28);
+}
+
+/* Keep every translucent accent treatment aligned with the new brand gradient. */
+.web-beta-badge {
+  border-color: rgba(46, 198, 71, .28);
+  background: linear-gradient(135deg, rgba(46, 198, 71, .09), rgba(184, 255, 9, .16));
+}
+
+.primary-button,
+.surprise-button,
+.web-floating-nav,
+.sync-updates-button {
+  background: var(--chewmash-accent-gradient);
+}
+
+.primary-button,
+.surprise-button {
+  box-shadow: 0 7px 18px rgba(46, 198, 71, .16);
+}
+
+.primary-button:hover:not(:disabled),
+.primary-button:focus-visible:not(:disabled),
+.surprise-button:hover:not(:disabled),
+.surprise-button:focus-visible:not(:disabled) {
+  box-shadow: 0 10px 24px rgba(46, 198, 71, .22);
+}
+
+.secondary-button:hover:not(:disabled),
+.secondary-button:focus-visible:not(:disabled) {
+  border-color: rgba(46, 198, 71, .55);
+  background: linear-gradient(135deg, rgba(46, 198, 71, .055), rgba(184, 255, 9, .08));
+}
+
+.first-run-shell {
+  background:
+    radial-gradient(circle at 12% 5%, rgba(46, 198, 71, .12), transparent 30%),
+    radial-gradient(circle at 88% 12%, rgba(184, 255, 9, .14), transparent 32%),
+    #f8f9f7;
+}
+
+.first-run-heading {
+  background: linear-gradient(135deg, rgba(46, 198, 71, .055), rgba(184, 255, 9, .075) 48%, #fff 82%);
+}
+
+.setup-step.done .setup-step-marker {
+  border-color: rgba(46, 198, 71, .55);
+  background: linear-gradient(135deg, rgba(46, 198, 71, .16), rgba(184, 255, 9, .22));
+}
+
+.setup-message,
+.sync-summary,
+.web-privacy-card {
+  background: linear-gradient(135deg, rgba(46, 198, 71, .045), rgba(184, 255, 9, .07));
+}
+
+.metric-card:hover {
+  border-color: rgba(46, 198, 71, .34);
+}
+
+.metric-card.active {
+  border-color: rgba(46, 198, 71, .38);
+}
+
+.chart-dot {
+  filter: drop-shadow(0 1px 2px rgba(46, 198, 71, .20));
+}
+
+/* Sweep the location bars from the new left color to the new right color. */
+.chart g[role='button']:nth-of-type(1) > rect[rx] { fill: #2ec647 !important; }
+.chart g[role='button']:nth-of-type(2) > rect[rx] { fill: #45d03d !important; }
+.chart g[role='button']:nth-of-type(3) > rect[rx] { fill: #5cd932 !important; }
+.chart g[role='button']:nth-of-type(4) > rect[rx] { fill: #73e228 !important; }
+.chart g[role='button']:nth-of-type(5) > rect[rx] { fill: #8aec1e !important; }
+.chart g[role='button']:nth-of-type(6) > rect[rx] { fill: #a1f613 !important; }
+.chart g[role='button']:nth-of-type(7) > rect[rx] { fill: #b8ff09 !important; }
+
+.drop-zone:hover,
+.drop-zone.dragging,
+.drop-zone:focus-visible {
+  border-color: var(--chewmash-accent-start);
+  background: linear-gradient(135deg, rgba(46, 198, 71, .07), rgba(184, 255, 9, .10));
+}
+
+.picks-now-card {
+  border-color: rgba(46, 198, 71, .34);
+  background: linear-gradient(135deg, rgba(46, 198, 71, .09), rgba(184, 255, 9, .12));
+}
+
+.pick-card:hover,
+.pick-card:focus-visible {
+  border-color: rgba(46, 198, 71, .42);
+}
+
+.session-welcome-overlay {
+  background: linear-gradient(135deg, rgba(46, 198, 71, .22), rgba(184, 255, 9, .27));
+}
+
+.session-welcome-card {
+  border-color: rgba(46, 198, 71, .28);
+}
+
+.sync-update-card.notification-sync {
+  border-color: rgba(46, 198, 71, .28);
+}
+
+.sync-update-card.all-caught-up {
+  border-color: rgba(46, 198, 71, .22);
+}
+
+.notification-read-button:focus-visible {
+  outline-color: rgba(46, 198, 71, .28);
+}
+
+.sync-updates-button {
+  box-shadow: 0 13px 30px rgba(46, 198, 71, .24);
+}
+
+.sync-updates-button:hover {
+  box-shadow: 0 16px 34px rgba(46, 198, 71, .30);
+}
+
+.sync-updates-button:focus-visible {
+  outline-color: rgba(46, 198, 71, .28);
+}
+
+/* Red unread-notification states and Picks category pennons intentionally remain semantic colors. */
