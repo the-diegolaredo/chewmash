@@ -134,7 +134,6 @@
   padding: 5px 10px;
   border-radius: 17px;
   background: transparent;
-  color: #fff;
   font-size: 10px;
   font-weight: 750;
 }
@@ -152,21 +151,37 @@
   width: 20px;
   height: 20px;
   display: block;
+  color: inherit;
 }
 
 .web-floating-nav .nav-label {
   font-size: 10px;
   line-height: 1;
+  color: inherit;
 }
 
-.web-floating-nav .nav-item.active {
-  background: #fff;
-  color: #278f39;
-  box-shadow: 0 2px 9px rgba(34, 46, 36, .13);
+/* Lock inactive tabs to white in every interaction state so no dark flash appears
+   while the active pill changes between tabs. */
+.web-floating-nav > .nav-item:not(.active),
+.web-floating-nav > .nav-item:not(.active):hover,
+.web-floating-nav > .nav-item:not(.active):focus,
+.web-floating-nav > .nav-item:not(.active):focus-visible,
+.web-floating-nav > .nav-item:not(.active):active {
+  color: #fff !important;
 }
 
-.web-floating-nav .nav-item:not(.active):hover,
-.web-floating-nav .nav-item:not(.active):focus-visible {
+.web-floating-nav > .nav-item:not(.active):hover,
+.web-floating-nav > .nav-item:not(.active):focus-visible,
+.web-floating-nav > .nav-item:not(.active):active {
   background: rgba(255, 255, 255, .24);
-  color: #fff;
+}
+
+.web-floating-nav > .nav-item.active,
+.web-floating-nav > .nav-item.active:hover,
+.web-floating-nav > .nav-item.active:focus,
+.web-floating-nav > .nav-item.active:focus-visible,
+.web-floating-nav > .nav-item.active:active {
+  background: #fff;
+  color: #278f39 !important;
+  box-shadow: 0 2px 9px rgba(34, 46, 36, .13);
 }
