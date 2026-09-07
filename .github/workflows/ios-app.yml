@@ -1,0 +1,53 @@
+name: iOS app
+
+on:
+  pull_request:
+    paths:
+      - 'apps/mobile/**'
+      - 'apps/web/**'
+      - 'src/get/mobile-capture.js'
+      - 'src/lib/**'
+      - 'src/storage/**'
+      - 'src/ui/**'
+      - 'package.json'
+      - '.github/workflows/ios-app.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/mobile/**'
+      - 'apps/web/**'
+      - 'src/get/mobile-capture.js'
+      - 'src/lib/**'
+      - 'src/storage/**'
+      - 'src/ui/**'
+      - 'package.json'
+      - '.github/workflows/ios-app.yml'
+
+jobs:
+  build-ios-app:
+    runs-on: macos-15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Sync web assets and Capacitor
+        run: npm run mobile:sync
+
+      - name: Build for iPhone Simulator
+        run: |
+          xcodebuild \
+            -project apps/mobile/ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build
