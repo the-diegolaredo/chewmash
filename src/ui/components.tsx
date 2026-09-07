@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 export function MetricCard({
   label,
@@ -47,11 +48,16 @@ export function MetricDetailModal({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
     };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
   }, [onClose]);
 
-  return (
+  const modal = (
     <div className="metric-modal-backdrop" role="presentation" onMouseDown={event => {
       if (event.target === event.currentTarget) onClose();
     }}>
@@ -64,6 +70,8 @@ export function MetricDetailModal({
       </section>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }
 
 export function SectionCard({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }) {
