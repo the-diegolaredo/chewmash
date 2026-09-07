@@ -159,6 +159,10 @@
   line-height: 1;
 }
 
+.web-floating-nav .nav-item:not(.active) .nav-icon {
+  color: #fff;
+}
+
 .web-floating-nav .nav-item.active {
   background: #fff;
   color: #278f39;
