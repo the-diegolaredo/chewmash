@@ -134,7 +134,7 @@
   padding: 5px 10px;
   border-radius: 17px;
   background: transparent;
-  color: rgba(28, 39, 30, .72);
+  color: #fff;
   font-size: 10px;
   font-weight: 750;
 }
@@ -159,10 +159,6 @@
   line-height: 1;
 }
 
-.web-floating-nav .nav-item:not(.active) .nav-icon {
-  color: #fff;
-}
-
 .web-floating-nav .nav-item.active {
   background: #fff;
   color: #278f39;
@@ -172,5 +168,5 @@
 .web-floating-nav .nav-item:not(.active):hover,
 .web-floating-nav .nav-item:not(.active):focus-visible {
   background: rgba(255, 255, 255, .24);
-  color: #202a22;
+  color: #fff;
 }
