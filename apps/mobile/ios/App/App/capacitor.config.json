@@ -1,0 +1,6 @@
+{
+	"appId": "app.chewmash",
+	"appName": "ChewMash",
+	"webDir": "../web/dist",
+	"packageClassList": []
+}
