@@ -12,6 +12,7 @@ import './picks-board.css';
 // Load the intended dashboard composition last so later feature styles cannot regress it.
 import './original-layout.css';
 import './picks-v2-board.css';
+import './modal-polish.css';
 import { App } from './App';
 import { FirstRunGate } from './FirstRunGate';
 import { retireLegacyWebCaches } from './retireLegacyWebCaches';
