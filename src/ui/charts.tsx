@@ -185,11 +185,13 @@ export function DailySpendChart({
   settings,
   asOf,
   target,
+  currentAverage,
 }: {
   transactions: DiningTransaction[];
   settings: PlanSettings;
   asOf: IsoDate;
   target: number;
+  currentAverage: number;
 }) {
   const [selectedDate, setSelectedDate] = useState<IsoDate | null>(null);
   const dates = campusDates(settings).filter(date => date <= asOf);
@@ -197,12 +199,12 @@ export function DailySpendChart({
   if (!dates.length) return <div className="empty-chart">No campus days to display yet.</div>;
 
   const values = dates.map(date => totals.get(date) ?? 0);
-  const max = Math.max(target * 1.35, ...values, 1);
+  const max = Math.max(target * 1.35, currentAverage * 1.15, ...values, 1);
   const width = 680;
-  const height = 250;
+  const height = 266;
   const left = 42;
   const right = 14;
-  const top = 16;
+  const top = 32;
   const bottom = 34;
   const innerWidth = width - left - right;
   const innerHeight = height - top - bottom;
@@ -213,7 +215,34 @@ export function DailySpendChart({
 
   return (
     <>
-      <svg className="chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Daily spending line and dot chart. Select a dot to open that day's spending details.">
+      <svg
+        className="chart"
+        viewBox={`0 0 ${width} ${height}`}
+        role="img"
+        aria-label={`Daily spending line and dot chart. Target average ${money(target)} per campus day. Current average ${money(currentAverage)} per campus day. Select a dot to open that day's spending details.`}
+      >
+        <g aria-hidden="true">
+          <line
+            x1={left}
+            x2={left + 20}
+            y1={12}
+            y2={12}
+            style={{ stroke: '#8d97a3', strokeWidth: 1.25, strokeDasharray: '5 5' }}
+          />
+          <text className="chart-axis" x={left + 27} y={15} style={{ fontWeight: 750 }}>
+            Target avg {money(target)}
+          </text>
+          <line
+            x1={left + 205}
+            x2={left + 225}
+            y1={12}
+            y2={12}
+            style={{ stroke: '#2d7053', strokeWidth: 1.5, strokeDasharray: '2 4' }}
+          />
+          <text className="chart-axis" x={left + 232} y={15} style={{ fill: '#2d7053', fontWeight: 750 }}>
+            Current avg {money(currentAverage)}
+          </text>
+        </g>
         {[0, 1, 2, 3, 4].map(step => {
           const value = max * step / 4;
           const yy = y(value);
@@ -225,6 +254,13 @@ export function DailySpendChart({
           );
         })}
         <line className="chart-target" x1={left} x2={width - right} y1={y(target)} y2={y(target)} />
+        <line
+          x1={left}
+          x2={width - right}
+          y1={y(currentAverage)}
+          y2={y(currentAverage)}
+          style={{ stroke: '#2d7053', strokeWidth: 1.5, strokeDasharray: '2 4', opacity: .9 }}
+        />
         {values.length > 1 ? <polyline className="chart-line" points={linePoints} /> : null}
         {values.map((value, index) => {
           const date = dates[index]!;

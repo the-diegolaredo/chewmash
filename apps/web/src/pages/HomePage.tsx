@@ -81,7 +81,13 @@ export function HomePage({ state, stats, today }: {
       </section>
 
       <SectionCard title="Spending by day" action={<span className="section-meta">Select a dot for daily details</span>}>
-        <DailySpendChart transactions={state.transactions} settings={state.plan} asOf={today} target={stats.targetPerCampusDay} />
+        <DailySpendChart
+          transactions={state.transactions}
+          settings={state.plan}
+          asOf={today}
+          target={stats.targetPerCampusDay}
+          currentAverage={stats.averageSpentPerCampusDay}
+        />
       </SectionCard>
       <SectionCard title="Dining locations"><PlaceSpendChart transactions={state.transactions} /></SectionCard>
 
