@@ -21,6 +21,18 @@ export function WebFloatingNav({
           </span>
           <span className="nav-label">Home</span>
         </button>
+        <button className={page === 'picks' ? 'nav-item active' : 'nav-item'} onClick={() => onChange('picks')} type="button" aria-label="Picks">
+          <span aria-hidden="true" className="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M7 3v8" />
+              <path d="M4.5 3v4.5A3.5 3.5 0 0 0 8 11h0" />
+              <path d="M9.5 3v4.5A3.5 3.5 0 0 1 6 11h0v10" />
+              <path d="M16 3v18" />
+              <path d="M16 3c2.4 1.4 3.5 3.5 3.5 6.2S18.4 14 16 15" />
+            </svg>
+          </span>
+          <span className="nav-label">Picks</span>
+        </button>
         <button className={page === 'upload' ? 'nav-item active' : 'nav-item'} onClick={() => onChange('upload')} type="button" aria-label="Upload">
           <span aria-hidden="true" className="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
