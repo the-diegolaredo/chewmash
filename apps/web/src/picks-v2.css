@@ -2,17 +2,18 @@
   padding-bottom: 24px;
 }
 
-.picks-v2-heading {
+.picks-v2-page > .page-title-row {
+  justify-content: center;
   text-align: center;
 }
 
-.picks-v2-heading h1 {
-  margin-inline: auto;
+.picks-v2-page > .page-title-row > div {
+  width: 100%;
 }
 
-.picks-v2-heading .subtle {
-  max-width: 680px;
-  margin: 8px auto 0;
+.picks-v2-page > .page-title-row .eyebrow,
+.picks-v2-page > .page-title-row h1 {
+  margin-inline: auto;
 }
 
 .picks-v2-context {
