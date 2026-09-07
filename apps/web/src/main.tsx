@@ -13,8 +13,11 @@ import './picks-board.css';
 import './original-layout.css';
 import './picks-v2-board.css';
 import './modal-polish.css';
+import './mobile-app.css';
 import { App } from './App';
 import { FirstRunGate } from './FirstRunGate';
+import { MobileApp } from './MobileApp';
+import { isNativeMobileApp } from './platform/native';
 import { retireLegacyWebCaches } from './retireLegacyWebCaches';
 import { SessionWelcome } from './SessionWelcome';
 
@@ -22,10 +25,14 @@ void retireLegacyWebCaches();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <FirstRunGate>
-      <SessionWelcome>
-        <App />
-      </SessionWelcome>
-    </FirstRunGate>
+    {isNativeMobileApp() ? (
+      <MobileApp />
+    ) : (
+      <FirstRunGate>
+        <SessionWelcome>
+          <App />
+        </SessionWelcome>
+      </FirstRunGate>
+    )}
   </StrictMode>,
 );
