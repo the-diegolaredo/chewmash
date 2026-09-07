@@ -3,6 +3,7 @@ import type { PlanSettings } from '../../../../src/lib/types';
 import type { ChewMashState } from '../../../../src/storage/state';
 import { SectionCard } from '../../../../src/ui/components';
 import { money } from '../../../../src/ui/utils';
+import { isNativeMobileApp } from '../platform/native';
 import './account-page.css';
 
 export function AccountPage({ state, planDraft, setPlanDraft, updateAway, savePlan, exportBackup, importBackup, clearDiningData, logOut }: {
@@ -21,6 +22,7 @@ export function AccountPage({ state, planDraft, setPlanDraft, updateAway, savePl
   const awaySlots = Array.from({ length: 3 }, (_, index) => planDraft.awayPeriods[index] ?? { start: '', end: '' });
   const transactions = [...state.transactions].sort((left, right) => `${right.date} ${right.time ?? ''}`.localeCompare(`${left.date} ${left.time ?? ''}`));
   const selectedPlan = diningPlanForBudget(planDraft.startingBudget);
+  const native = isNativeMobileApp();
 
   return (
     <div className="page-stack">
@@ -56,7 +58,11 @@ export function AccountPage({ state, planDraft, setPlanDraft, updateAway, savePl
         <button className="primary-button" type="button" onClick={() => void savePlan()}>Save settings</button>
       </SectionCard>
       <SectionCard title="Data controls">
-        <p className="section-copy">Dining data is stored in IndexedDB in this browser on this device. chewmash does not send your imported dining history to a backend. Clearing this site's browser data will remove the local copy, so export a backup if you want a portable copy.</p>
+        <p className="section-copy">
+          {native
+            ? 'Dining data is stored locally on this iPhone. chewmash does not send your imported dining history to a backend. Removing the app or clearing its local data removes this copy, so export a backup if you want a portable copy.'
+            : 'Dining data is stored in IndexedDB in this browser on this device. chewmash does not send your imported dining history to a backend. Clearing this site’s browser data will remove the local copy, so export a backup if you want a portable copy.'}
+        </p>
         <div className="button-row">
           <button className="secondary-button" type="button" onClick={exportBackup}>Export backup</button>
           <button className="secondary-button" type="button" onClick={importBackup}>Import backup</button>
@@ -64,7 +70,11 @@ export function AccountPage({ state, planDraft, setPlanDraft, updateAway, savePl
         </div>
       </SectionCard>
       <SectionCard title="Log out">
-        <p className="section-copy">chewmash has no cloud account to sign out of. Logging out removes this browser's local chewmash plan and dining data, then returns to the setup screen.</p>
+        <p className="section-copy">
+          {native
+            ? 'chewmash has no cloud account to sign out of. Logging out resets the local chewmash plan and dining data on this iPhone, then returns to setup.'
+            : 'chewmash has no cloud account to sign out of. Logging out removes this browser’s local chewmash plan and dining data, then returns to the setup screen.'}
+        </p>
         <button className="danger-button" type="button" onClick={() => void logOut()}>Log out</button>
       </SectionCard>
       <SectionCard title="Imported transactions" action={<span className="section-meta">{transactions.length} stored</span>}>
