@@ -6,4 +6,5 @@ backups/
 private/
 node_modules/
 .output/
+.wxt/
 apps/web/dist/
