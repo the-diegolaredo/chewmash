@@ -194,6 +194,7 @@ export function DailySpendChart({
   currentAverage: number;
 }) {
   const [selectedDate, setSelectedDate] = useState<IsoDate | null>(null);
+  const [hoveredAverage, setHoveredAverage] = useState<'target' | 'current' | null>(null);
   const dates = campusDates(settings).filter(date => date <= asOf);
   const totals = dailyTotals(transactions);
   if (!dates.length) return <div className="empty-chart">No campus days to display yet.</div>;
@@ -201,10 +202,10 @@ export function DailySpendChart({
   const values = dates.map(date => totals.get(date) ?? 0);
   const max = Math.max(target * 1.35, currentAverage * 1.15, ...values, 1);
   const width = 680;
-  const height = 266;
+  const height = 250;
   const left = 42;
   const right = 14;
-  const top = 32;
+  const top = 16;
   const bottom = 34;
   const innerWidth = width - left - right;
   const innerHeight = height - top - bottom;
@@ -219,30 +220,8 @@ export function DailySpendChart({
         className="chart"
         viewBox={`0 0 ${width} ${height}`}
         role="img"
-        aria-label={`Daily spending line and dot chart. Target average ${money(target)} per campus day. Current average ${money(currentAverage)} per campus day. Select a dot to open that day's spending details.`}
+        aria-label={`Daily spending line and dot chart. Target average ${money(target)} per campus day. Current average ${money(currentAverage)} per campus day. Hover an average guide to identify it, or select a dot to open that day's spending details.`}
       >
-        <g aria-hidden="true">
-          <line
-            x1={left}
-            x2={left + 20}
-            y1={12}
-            y2={12}
-            style={{ stroke: '#8d97a3', strokeWidth: 1.25, strokeDasharray: '5 5' }}
-          />
-          <text className="chart-axis" x={left + 27} y={15} style={{ fontWeight: 750 }}>
-            Target avg {money(target)}
-          </text>
-          <line
-            x1={left + 205}
-            x2={left + 225}
-            y1={12}
-            y2={12}
-            style={{ stroke: '#2d7053', strokeWidth: 1.5, strokeDasharray: '2 4' }}
-          />
-          <text className="chart-axis" x={left + 232} y={15} style={{ fill: '#2d7053', fontWeight: 750 }}>
-            Current avg {money(currentAverage)}
-          </text>
-        </g>
         {[0, 1, 2, 3, 4].map(step => {
           const value = max * step / 4;
           const yy = y(value);
@@ -253,14 +232,91 @@ export function DailySpendChart({
             </g>
           );
         })}
-        <line className="chart-target" x1={left} x2={width - right} y1={y(target)} y2={y(target)} />
-        <line
-          x1={left}
-          x2={width - right}
-          y1={y(currentAverage)}
-          y2={y(currentAverage)}
-          style={{ stroke: '#2d7053', strokeWidth: 1.5, strokeDasharray: '2 4', opacity: .9 }}
-        />
+        <g
+          onMouseEnter={() => setHoveredAverage('target')}
+          onMouseLeave={() => setHoveredAverage(current => current === 'target' ? null : current)}
+          style={{ cursor: 'help' }}
+        >
+          <title>Target average: {money(target)} per campus day</title>
+          <line
+            x1={left}
+            x2={width - right}
+            y1={y(target)}
+            y2={y(target)}
+            stroke="transparent"
+            strokeWidth={14}
+            pointerEvents="stroke"
+          />
+          <line
+            x1={left}
+            x2={width - right}
+            y1={y(target)}
+            y2={y(target)}
+            pointerEvents="none"
+            style={{ stroke: '#718198', strokeWidth: 1.6, strokeDasharray: '7 6', opacity: .95 }}
+          />
+        </g>
+        <g
+          onMouseEnter={() => setHoveredAverage('current')}
+          onMouseLeave={() => setHoveredAverage(current => current === 'current' ? null : current)}
+          style={{ cursor: 'help' }}
+        >
+          <title>Current average: {money(currentAverage)} per campus day</title>
+          <line
+            x1={left}
+            x2={width - right}
+            y1={y(currentAverage)}
+            y2={y(currentAverage)}
+            stroke="transparent"
+            strokeWidth={14}
+            pointerEvents="stroke"
+          />
+          <line
+            x1={left}
+            x2={width - right}
+            y1={y(currentAverage)}
+            y2={y(currentAverage)}
+            pointerEvents="none"
+            style={{ stroke: '#2d7053', strokeWidth: 1.6, strokeDasharray: '7 6', opacity: .95 }}
+          />
+        </g>
+        {hoveredAverage ? (() => {
+          const isTarget = hoveredAverage === 'target';
+          const value = isTarget ? target : currentAverage;
+          const guideY = y(value);
+          const tooltipWidth = 134;
+          const tooltipHeight = 24;
+          const tooltipX = width - right - tooltipWidth;
+          const preferredY = guideY - tooltipHeight - 7;
+          const tooltipY = Math.max(top + 3, Math.min(height - bottom - tooltipHeight - 3, preferredY));
+          return (
+            <g pointerEvents="none" aria-hidden="true">
+              <rect
+                x={tooltipX}
+                y={tooltipY}
+                width={tooltipWidth}
+                height={tooltipHeight}
+                rx={7}
+                style={{
+                  fill: isTarget ? '#eef1f5' : '#eaf3ed',
+                  stroke: isTarget ? '#b9c3d0' : '#b8d0c1',
+                  strokeWidth: 1,
+                }}
+              />
+              <text
+                x={tooltipX + 10}
+                y={tooltipY + 16}
+                style={{
+                  fill: isTarget ? '#536276' : '#245f45',
+                  fontSize: 10,
+                  fontWeight: 800,
+                }}
+              >
+                {isTarget ? 'Target avg' : 'Current avg'} {money(value)}
+              </text>
+            </g>
+          );
+        })() : null}
         {values.length > 1 ? <polyline className="chart-line" points={linePoints} /> : null}
         {values.map((value, index) => {
           const date = dates[index]!;
