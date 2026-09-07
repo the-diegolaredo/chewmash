@@ -32,11 +32,19 @@ chewmash does not store or transmit GET cookies, session tokens, credentials, st
 The public web app currently has these user-facing areas:
 
 - **Home** — budget summary cards, daily spending chart, spending-by-location chart, and the notification center
+- **Picks** — budget-aware meal and drink recommendations filtered by meal period and restaurant availability, with refresh, details, directions, and Pick for me
 - **Upload** — GET connector sync plus local statement PDF import
 - **Account** — dining-plan selection, plan dates, away periods, backup controls, privacy controls, and imported transactions
-- **Picks** — recommendation code exists in the project, but the page is intentionally not exposed in navigation yet because it is still in development
 
-The floating bottom navigation currently exposes only **Home** and **Upload**. Account is reached from the header. Picks is planned to become the third floating tab once it is ready.
+The floating bottom navigation exposes **Home**, **Picks**, and **Upload**. Account is reached from the header.
+
+### Picks
+
+Picks uses the student Grubhub recordings as its menu source and a normalized Cal Poly dining-hours snapshot for availability. Recommendations consider the current meal period, the user's Dining Dollars left for the day, and which supported restaurants are open.
+
+The recommendation mix is internally constrained to fast-food, specialty-drink, and healthy-food categories. Generic bottled water, bottled/fountain drinks, and similar generic beverages are excluded. A **Refresh picks** action rotates through other strong eligible candidates while preserving those standards, and **Pick for me!** favors affordable solid-food options.
+
+Chick-fil-A and Brunch can be added as menu-data updates without changing the recommendation engine once their student Grubhub menus are available.
 
 ### Home notification center
 
@@ -102,7 +110,7 @@ chewmash/
 │           ├── pages/                 # HomePage, UploadPage, AccountPage
 │           ├── platform/              # browser-only adapters/actions
 │           ├── components/            # web-only reusable components
-│           ├── PicksPage.tsx           # Picks UI, not exposed yet
+│           ├── PicksPage.tsx          # public Picks UI
 │           └── ...
 ├── entrypoints/
 │   ├── background.ts                  # connector background / GET opener
@@ -113,7 +121,7 @@ chewmash/
 │   ├── connector/                     # bridge protocol
 │   ├── get/                           # GET parser and sync status
 │   ├── lib/                           # budget, dates, transactions, dining plans
-│   ├── menu/                          # Dine On Campus + Picks recommendation logic
+│   ├── menu/                          # recorded menu catalog, hours, Picks logic
 │   ├── pdf/                           # local CBORD statement parser
 │   ├── storage/                       # shared repository + extension/web adapters
 │   └── ui/                            # shared React UI helpers and charts
@@ -173,10 +181,11 @@ Current web features include:
 - daily spend dot/line chart with clickable day details
 - interactive spending-by-location bar chart with transaction details
 - recent-order, over-budget, and stale-sync notifications
+- budget/time/open-location-aware Picks with refresh, details, directions, and Pick for me
 - dining-plan selection and away periods
 - backup import/export
 - local IndexedDB storage
-- Home ↔ Upload page transition animation
+- Home / Picks / Upload floating navigation with page transition motion
 
 ## GET connector behavior
 
