@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RecordedMenuItem } from './grubhub';
+import { PICK_MENU_ITEMS } from './pickCatalog';
 import { mealPeriodForHour, selectRecordedPicks, solidPickPool } from './recordedPicks';
 
 function item(id: string, type: RecordedMenuItem['type'], locationId: string, price: number): RecordedMenuItem {
@@ -84,6 +85,32 @@ describe('recorded Picks engine', () => {
     expect(result.picks[0]?.item.id).toBe('fits');
     expect(result.picks[0]?.fitsBudget).toBe(true);
     expect(result.picks.at(-1)?.item.id).toBe('over');
+  });
+
+  it('nudges Panda Express, Chick-fil-A, and Taco Bell into the fast-food slots when all are open and affordable', () => {
+    const items = [
+      item('panda', 'fast', 'panda-express', 9),
+      item('cfa', 'fast', 'chick-fil-a', 9),
+      item('taco', 'fast', 'taco-bell', 9),
+      item('hearth', 'fast', 'hearth', 9),
+      item('noodles', 'fast', 'noodles', 9),
+      item('subway', 'fast', 'subway-dexter', 9),
+    ];
+    const result = selectRecordedPicks({
+      items,
+      remainingToday: 20,
+      mealPeriod: 'lunch',
+      openLocationIds: new Set(items.map(value => value.locationId)),
+    });
+
+    expect(new Set(result.picks.map(pick => pick.item.locationId))).toEqual(
+      new Set(['panda-express', 'chick-fil-a', 'taco-bell']),
+    );
+  });
+
+  it('includes the newly recorded Chick-fil-A and Brunch menus in the shared Picks catalog', () => {
+    expect(PICK_MENU_ITEMS.some(value => value.locationId === 'chick-fil-a' && value.name === 'Chick-fil-A Chicken Sandwich')).toBe(true);
+    expect(PICK_MENU_ITEMS.some(value => value.locationId === 'brunch' && value.name === 'Chicken Strips & Fries')).toBe(true);
   });
 
   it('keeps Pick for me focused on solid food when solid choices exist', () => {

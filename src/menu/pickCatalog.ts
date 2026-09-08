@@ -1,5 +1,6 @@
 import { RECORDED_MENU_ITEMS, type RecordedMenuItem } from './grubhub';
 import { RECORDED_MENU_SUPPLEMENT } from './grubhubSupplement';
+import { RECORDED_MENU_SEPT7 } from './grubhubSept7';
 
 function dedupeCatalog(items: RecordedMenuItem[]): RecordedMenuItem[] {
   const byId = new Map<string, RecordedMenuItem>();
@@ -12,4 +13,5 @@ function dedupeCatalog(items: RecordedMenuItem[]): RecordedMenuItem[] {
 export const PICK_MENU_ITEMS: RecordedMenuItem[] = dedupeCatalog([
   ...RECORDED_MENU_ITEMS,
   ...RECORDED_MENU_SUPPLEMENT,
+  ...RECORDED_MENU_SEPT7,
 ]);
