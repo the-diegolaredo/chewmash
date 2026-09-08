@@ -181,10 +181,6 @@ export function PicksPage({
         ) : null}
       </section>
 
-      <div className="picks-pending-note">
-        Chick-fil-A and Brunch are intentionally left out until their student Grubhub menus are available. Adding them later only requires menu data; the Picks engine and layout do not need to change.
-      </div>
-
       {selected ? <PickDetails pick={selected} onClose={() => setSelected(null)} /> : null}
     </div>
   );
