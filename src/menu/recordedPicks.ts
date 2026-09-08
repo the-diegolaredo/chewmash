@@ -31,6 +31,16 @@ const VARIANT_STEPS: Record<PickType, number> = {
   healthy: 5,
 };
 
+// When these traditional fast-food spots are open and fit the user's target,
+// nudge them to the front of the three Fast Food slots. Budget fit and open
+// status still outrank the preference, so ChewMash never recommends a closed
+// place or an obviously over-budget meal just to satisfy the brand preference.
+const PREFERRED_FAST_FOOD_LOCATIONS = new Set([
+  'panda-express',
+  'chick-fil-a',
+  'taco-bell',
+]);
+
 export function mealPeriodForHour(hour: number): MealPeriod {
   if (!Number.isFinite(hour)) return 'other';
   if (hour >= 5 && hour < 10) return 'breakfast';
@@ -151,6 +161,10 @@ function scoreItem(item: RecordedMenuItem, remainingToday: number, mealPeriod: M
   if (item.periods.includes(mealPeriod)) {
     score += 45;
     reasons.push(`works for ${mealPeriodLabel(mealPeriod).toLowerCase()}`);
+  }
+
+  if (item.type === 'fast' && PREFERRED_FAST_FOOD_LOCATIONS.has(item.locationId)) {
+    score += 32;
   }
 
   if (item.type === 'healthy') {
