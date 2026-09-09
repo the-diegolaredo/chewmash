@@ -167,46 +167,148 @@ button.pick-v2-card:focus-visible {
 
 .pick-for-me-panel {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 16px 24px;
-  align-items: center;
-  padding: 24px;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: 18px;
+  padding: 28px 24px;
   border: 1px solid #cfe0d4;
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(58, 198, 81, .10), rgba(202, 250, 65, .16));
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(46, 198, 71, .10), rgba(184, 255, 9, .18));
+  text-align: center;
+}
+
+.pick-for-me-copy {
+  width: min(100%, 620px);
+  display: grid;
+  justify-items: center;
 }
 
 .pick-for-me-panel h2 {
   margin-top: 4px;
   color: #173f30;
-  font-size: 24px;
+  font-size: 28px;
 }
 
 .pick-for-me-panel p:not(.eyebrow) {
-  margin-top: 6px;
+  max-width: 540px;
+  margin: 7px auto 0;
   color: #607269;
   font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.pick-slot-machine {
+  width: min(100%, 430px);
+  display: grid;
+  gap: 9px;
+}
+
+.pick-slot-window {
+  position: relative;
+  overflow: hidden;
+  padding: 15px;
+  border: 1px solid rgba(70, 121, 87, .20);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .78), 0 12px 30px rgba(26, 71, 49, .07);
+}
+
+.pick-slot-window::before,
+.pick-slot-window::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  left: 15px;
+  right: 15px;
+  height: 24px;
+  pointer-events: none;
+}
+
+.pick-slot-window::before {
+  top: 15px;
+  background: linear-gradient(to bottom, rgba(248, 252, 249, .78), rgba(248, 252, 249, 0));
+}
+
+.pick-slot-window::after {
+  bottom: 15px;
+  background: linear-gradient(to top, rgba(248, 252, 249, .72), rgba(248, 252, 249, 0));
+}
+
+.pick-slot-card {
+  z-index: 1;
+  width: 100%;
+  min-height: 196px;
+  margin: 0;
+  box-shadow: 0 10px 28px rgba(28, 70, 51, .10);
+}
+
+.pick-slot-card-empty {
+  place-items: center;
+}
+
+.pick-slot-icon {
+  width: 34px;
+  height: 34px;
+  margin-bottom: 2px;
+  fill: none;
+  stroke: #2e7a4c;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pick-slot-card.is-spinning {
+  animation: pick-slot-reel-tick 85ms ease-out both;
+}
+
+.pick-slot-card.is-landed {
+  animation: pick-slot-land .28s cubic-bezier(.2, .8, .2, 1) both;
+  border-color: rgba(46, 198, 71, .42);
+  box-shadow: 0 14px 34px rgba(38, 128, 69, .14);
+}
+
+.pick-slot-status {
+  min-height: 18px;
+  color: #5f7168;
+  font-size: 11px;
+  font-weight: 750;
+  text-align: center;
+}
+
+.pick-for-me-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
 }
 
 .pick-for-me-button {
-  min-width: 142px;
+  min-width: 154px;
 }
 
-.pick-for-me-result {
-  grid-column: 1 / -1;
-  display: grid;
-  gap: 3px;
-  padding-top: 14px;
-  border-top: 1px solid rgba(80, 130, 94, .18);
+@keyframes pick-slot-reel-tick {
+  from {
+    opacity: .36;
+    transform: translateY(-13px) scale(.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-.pick-for-me-result strong {
-  color: #173f30;
-}
-
-.pick-for-me-result span {
-  color: #607269;
-  font-size: 12px;
+@keyframes pick-slot-land {
+  0% {
+    transform: translateY(-9px) scale(.985);
+  }
+  70% {
+    transform: translateY(2px) scale(1.008);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
 }
 
 .pick-detail-restaurant {
@@ -252,16 +354,49 @@ button.pick-v2-card:focus-visible {
   }
 
   .pick-for-me-panel {
-    grid-template-columns: 1fr;
+    padding: 24px 16px;
   }
 
-  .pick-for-me-button {
+  .pick-slot-machine {
     width: 100%;
+  }
+
+  .pick-slot-window {
+    padding: 12px;
+  }
+
+  .pick-slot-window::before,
+  .pick-slot-window::after {
+    left: 12px;
+    right: 12px;
+  }
+
+  .pick-slot-window::before { top: 12px; }
+  .pick-slot-window::after { bottom: 12px; }
+
+  .pick-slot-card {
+    min-height: 176px;
+  }
+
+  .pick-for-me-actions {
+    width: 100%;
+    display: grid;
+  }
+
+  .pick-for-me-actions .primary-button,
+  .pick-for-me-actions .secondary-button {
+    width: min(100%, 300px);
+    margin-inline: auto;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .pick-v2-card {
     transition: none;
+  }
+
+  .pick-slot-card.is-spinning,
+  .pick-slot-card.is-landed {
+    animation: none;
   }
 }
