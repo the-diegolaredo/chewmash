@@ -25,16 +25,20 @@ const QUOTAS: Record<PickType, number> = {
   healthy: 4,
 };
 
-const VARIANT_STEPS: Record<PickType, number> = {
-  fast: 2,
-  drink: 3,
-  healthy: 5,
+const LOCATION_VARIANT_STEPS: Record<PickType, number> = {
+  fast: 1,
+  drink: 1,
+  healthy: 2,
 };
 
+const MAX_ITEMS_PER_LOCATION_REFRESH_POOL = 6;
+const LOCATION_REFRESH_POOL_MULTIPLIER = 2;
+const LOCATION_REFRESH_POOL_EXTRA = 2;
+const STRONG_ITEM_SCORE_WINDOW = 28;
+
 // When these traditional fast-food spots are open and fit the user's target,
-// nudge them to the front of the three Fast Food slots. Budget fit and open
-// status still outrank the preference, so ChewMash never recommends a closed
-// place or an obviously over-budget meal just to satisfy the brand preference.
+// nudge them toward the three Fast Food slots. Refreshes are still allowed to
+// rotate another restaurant into the row so the grid does not become stale.
 const PREFERRED_FAST_FOOD_LOCATIONS = new Set([
   'panda-express',
   'chick-fil-a',
@@ -80,8 +84,7 @@ export function selectRecordedPicks(options: {
     const candidates = scored
       .filter(pick => pick.item.type === type)
       .sort(comparePicks);
-    const ordered = orderForVariant(candidates, QUOTAS[type], variant, type);
-    const selected = chooseWithRestaurantVariety(ordered, QUOTAS[type]);
+    const selected = chooseVariantPicks(candidates, QUOTAS[type], variant, type);
     picks.push(...selected);
     counts[type] = selected.length;
   }
@@ -96,47 +99,142 @@ export function solidPickPool(picks: RecordedPick[]): RecordedPick[] {
   return affordable.length ? affordable : solid;
 }
 
-function orderForVariant(
+function chooseVariantPicks(
   candidates: RecordedPick[],
   limit: number,
   variant: number,
   type: PickType,
 ): RecordedPick[] {
-  if (variant <= 0 || candidates.length <= limit) return candidates;
+  if (!candidates.length || limit <= 0) return [];
 
-  // Refreshes only rotate through strong candidates. If there are enough
-  // affordable choices to fill the category, an over-budget option never gets
-  // promoted just for novelty.
-  const affordable = candidates.filter(pick => pick.fitsBudget);
-  const preferred = affordable.length >= limit ? affordable : candidates;
-  const poolSize = Math.min(preferred.length, Math.max(limit + 1, limit * 3));
-  const pool = preferred.slice(0, poolSize);
-  if (pool.length <= 1) return candidates;
+  // First pick one refresh-aware representative from every restaurant. This is
+  // the key difference from the old global rotation: Panda, Subway, Chick-fil-A,
+  // etc. can now rotate through their own menus instead of always contributing
+  // whichever single item happened to be their highest static score.
+  const byLocation = new Map<string, RecordedPick[]>();
+  for (const pick of candidates) {
+    const group = byLocation.get(pick.item.locationId) ?? [];
+    group.push(pick);
+    byLocation.set(pick.item.locationId, group);
+  }
 
-  const offset = (variant * VARIANT_STEPS[type]) % pool.length;
-  const rotated = [...pool.slice(offset), ...pool.slice(0, offset)];
-  const poolSet = new Set(pool);
-  return [...rotated, ...candidates.filter(pick => !poolSet.has(pick))];
+  const representatives = [...byLocation.values()]
+    .map(group => representativeForVariant(group, variant))
+    .sort(comparePicks);
+
+  // If there are enough affordable restaurants to fill the category, keep the
+  // refresh entirely inside that affordable set. Otherwise preserve the old
+  // behavior and allow the best over-target options to fill remaining slots.
+  const affordableRepresentatives = representatives.filter(pick => pick.fitsBudget);
+  const source = affordableRepresentatives.length >= limit
+    ? affordableRepresentatives
+    : representatives;
+
+  const poolSize = Math.min(
+    source.length,
+    Math.max(limit + LOCATION_REFRESH_POOL_EXTRA, limit * LOCATION_REFRESH_POOL_MULTIPLIER),
+  );
+  const refreshPool = source.slice(0, poolSize);
+  const rest = source.slice(poolSize);
+  const ordered = variant > 0 && refreshPool.length > 1
+    ? [
+        ...rotate(
+          refreshPool,
+          (variant * LOCATION_VARIANT_STEPS[type]) % refreshPool.length,
+        ),
+        ...rest,
+      ]
+    : [...refreshPool, ...rest];
+
+  let selected = ordered.slice(0, limit);
+
+  // Keep the user's earlier fast-food preference without freezing all three
+  // fast slots forever. On refreshed grids, at least two classic fast-food
+  // locations stay represented when they are available in the eligible pool.
+  if (type === 'fast' && variant > 0) {
+    selected = ensurePreferredFastFoodFloor(selected, ordered, limit);
+  }
+
+  // Usually there are more unique restaurants than slots. This fallback only
+  // matters at hours with very few open places and lets multiple items from the
+  // same restaurant fill otherwise-empty slots.
+  if (selected.length < limit) {
+    const selectedIds = new Set(selected.map(pick => pick.item.id));
+    const fallback = variant > 0 && candidates.length > 1
+      ? rotate(candidates, variant % candidates.length)
+      : candidates;
+    for (const pick of fallback) {
+      if (selectedIds.has(pick.item.id)) continue;
+      selected.push(pick);
+      selectedIds.add(pick.item.id);
+      if (selected.length >= limit) break;
+    }
+  }
+
+  return selected.slice(0, limit);
 }
 
-function chooseWithRestaurantVariety(candidates: RecordedPick[], limit: number): RecordedPick[] {
-  const selected: RecordedPick[] = [];
-  const usedLocations = new Set<string>();
+function representativeForVariant(group: RecordedPick[], variant: number): RecordedPick {
+  const sorted = [...group].sort(comparePicks);
+  const affordable = sorted.filter(pick => pick.fitsBudget);
+  const source = affordable.length ? affordable : sorted;
+  if (variant <= 0 || source.length <= 1) return source[0] ?? sorted[0];
 
-  for (const pick of candidates) {
-    if (usedLocations.has(pick.item.locationId)) continue;
-    selected.push(pick);
-    usedLocations.add(pick.item.locationId);
-    if (selected.length >= limit) return selected;
+  const bestScore = source[0]?.score ?? 0;
+  let pool = source
+    .filter(pick => bestScore - pick.score <= STRONG_ITEM_SCORE_WINDOW)
+    .slice(0, MAX_ITEMS_PER_LOCATION_REFRESH_POOL);
+
+  // A restaurant with several perfectly usable items should still change even
+  // when one item has a modest score lead. We never cross from affordable into
+  // over-target options just to create novelty because `source` is already
+  // affordability-filtered whenever that is possible.
+  if (pool.length < 2 && source.length > 1) {
+    pool = source.slice(0, Math.min(source.length, MAX_ITEMS_PER_LOCATION_REFRESH_POOL));
   }
 
-  for (const pick of candidates) {
-    if (selected.includes(pick)) continue;
-    selected.push(pick);
-    if (selected.length >= limit) break;
+  return pool[variant % pool.length] ?? source[0] ?? sorted[0];
+}
+
+function ensurePreferredFastFoodFloor(
+  selected: RecordedPick[],
+  ordered: RecordedPick[],
+  limit: number,
+): RecordedPick[] {
+  const availablePreferred = ordered.filter(pick =>
+    PREFERRED_FAST_FOOD_LOCATIONS.has(pick.item.locationId),
+  );
+  const required = Math.min(2, limit, availablePreferred.length);
+  if (required <= 0) return selected;
+
+  const result = [...selected];
+  let preferredCount = result.filter(pick =>
+    PREFERRED_FAST_FOOD_LOCATIONS.has(pick.item.locationId),
+  ).length;
+
+  for (const preferred of availablePreferred) {
+    if (preferredCount >= required) break;
+    if (result.some(pick => pick.item.locationId === preferred.item.locationId)) continue;
+
+    const replaceIndex = [...result]
+      .map((pick, index) => ({ pick, index }))
+      .reverse()
+      .find(({ pick }) => !PREFERRED_FAST_FOOD_LOCATIONS.has(pick.item.locationId))
+      ?.index;
+    if (replaceIndex === undefined) break;
+
+    result[replaceIndex] = preferred;
+    preferredCount += 1;
   }
 
-  return selected;
+  return result;
+}
+
+function rotate<T>(values: T[], offset: number): T[] {
+  if (!values.length) return [];
+  const normalized = ((offset % values.length) + values.length) % values.length;
+  if (!normalized) return [...values];
+  return [...values.slice(normalized), ...values.slice(0, normalized)];
 }
 
 function scoreItem(item: RecordedMenuItem, remainingToday: number, mealPeriod: MealPeriod): RecordedPick {
