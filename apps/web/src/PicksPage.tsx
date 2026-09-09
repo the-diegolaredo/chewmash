@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { locationForItem, PICK_LOCATIONS, type PickType } from '../../../src/menu/grubhub';
 import { formatClosingTime, openStatusesForLocations } from '../../../src/menu/hours';
 import {
@@ -31,8 +31,12 @@ export function PicksPage({
 }) {
   const [selected, setSelected] = useState<RecordedPick | null>(null);
   const [randomPick, setRandomPick] = useState<RecordedPick | null>(null);
+  const [slotPreview, setSlotPreview] = useState<RecordedPick | null>(null);
+  const [slotSpinning, setSlotSpinning] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);
   const [now, setNow] = useState(() => new Date());
+  const slotIntervalRef = useRef<number | null>(null);
+  const slotTimeoutRef = useRef<number | null>(null);
   const mealPeriod = mealPeriodForHour(now.getHours());
 
   // The web GET connector is intentionally not used for Picks menu data.
@@ -42,6 +46,11 @@ export function PicksPage({
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 60_000);
     return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => () => {
+    if (slotIntervalRef.current !== null) window.clearInterval(slotIntervalRef.current);
+    if (slotTimeoutRef.current !== null) window.clearTimeout(slotTimeoutRef.current);
   }, []);
 
   const schedule = useMemo(() => buildRecordedCalPolyHours(now), [now]);
@@ -65,6 +74,67 @@ export function PicksPage({
     }),
     [mealPeriod, openLocationIds, refreshVersion, remainingToday],
   );
+
+  function clearSlotTimers() {
+    if (slotIntervalRef.current !== null) {
+      window.clearInterval(slotIntervalRef.current);
+      slotIntervalRef.current = null;
+    }
+    if (slotTimeoutRef.current !== null) {
+      window.clearTimeout(slotTimeoutRef.current);
+      slotTimeoutRef.current = null;
+    }
+  }
+
+  function resetSlotMachine() {
+    clearSlotTimers();
+    setSlotSpinning(false);
+    setSlotPreview(null);
+    setRandomPick(null);
+  }
+
+  function spinPickForMe() {
+    if (slotSpinning) return;
+    const pool = solidPickPool(selection.picks);
+    if (!pool.length) return;
+
+    const differentFromLast = randomPick
+      ? pool.filter(pick => pick.item.id !== randomPick.item.id)
+      : pool;
+    const finalPool = differentFromLast.length ? differentFromLast : pool;
+    const finalPick = finalPool[Math.floor(Math.random() * finalPool.length)] ?? pool[0];
+    if (!finalPick) return;
+
+    clearSlotTimers();
+
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      setSlotPreview(finalPick);
+      setRandomPick(finalPick);
+      setSlotSpinning(false);
+      return;
+    }
+
+    setRandomPick(null);
+    setSlotSpinning(true);
+    let cursor = Math.floor(Math.random() * pool.length);
+    setSlotPreview(pool[cursor] ?? finalPick);
+
+    slotIntervalRef.current = window.setInterval(() => {
+      cursor = (cursor + 1) % pool.length;
+      setSlotPreview(pool[cursor] ?? finalPick);
+    }, 85);
+
+    slotTimeoutRef.current = window.setTimeout(() => {
+      if (slotIntervalRef.current !== null) {
+        window.clearInterval(slotIntervalRef.current);
+        slotIntervalRef.current = null;
+      }
+      slotTimeoutRef.current = null;
+      setSlotPreview(finalPick);
+      setRandomPick(finalPick);
+      setSlotSpinning(false);
+    }, 1150);
+  }
 
   if (!hasDiningData) {
     return (
@@ -138,8 +208,8 @@ export function PicksPage({
             type="button"
             disabled={!selection.picks.length}
             onClick={() => {
+              resetSlotMachine();
               setRefreshVersion(version => version + 1);
-              setRandomPick(null);
               setSelected(null);
             }}
           >
@@ -155,30 +225,50 @@ export function PicksPage({
       </section>
 
       <section className="pick-for-me-panel" aria-label="Pick for me">
-        <div>
+        <div className="pick-for-me-copy">
           <p className="eyebrow">Can’t decide?</p>
           <h2>Pick for me!</h2>
-          <p>ChewMash chooses from the current Picks and prefers an affordable solid-food option over a drink.</p>
+          <p>Spin the reel and let ChewMash land on one of your current affordable food Picks.</p>
         </div>
-        <button
-          className="primary-button pick-for-me-button"
-          type="button"
-          disabled={!selection.picks.length}
-          onClick={() => {
-            const pool = solidPickPool(selection.picks);
-            const result = pool[Math.floor(Math.random() * pool.length)] ?? null;
-            setRandomPick(result);
-          }}
-        >
-          {randomPick ? 'Pick again' : 'Pick for me!'}
-        </button>
-        {randomPick ? (
-          <div className="pick-for-me-result" aria-live="polite">
-            <strong>{randomPick.item.name}</strong>
-            <span>{locationForItem(randomPick.item).name} · {money(randomPick.item.price)}</span>
-            <button className="secondary-button" type="button" onClick={() => setSelected(randomPick)}>View this pick</button>
+
+        <div className="pick-slot-machine" aria-busy={slotSpinning}>
+          <div className="pick-slot-window">
+            {slotPreview ? (
+              <PickSlotCard pick={slotPreview} spinning={slotSpinning} />
+            ) : (
+              <div className="pick-v2-card pick-v2-placeholder pick-slot-card pick-slot-card-empty">
+                <div className="pick-v2-center">
+                  <SlotIcon />
+                  <strong className="pick-v2-name">Ready to spin</strong>
+                  <span className="pick-v2-restaurant">One of today’s food Picks will land here.</span>
+                </div>
+              </div>
+            )}
           </div>
-        ) : null}
+          <div className="pick-slot-status" aria-live="polite">
+            {slotSpinning
+              ? 'Spinning through today’s Picks…'
+              : randomPick
+                ? `${randomPick.item.name} is your pick.`
+                : 'Tap the button to spin.'}
+          </div>
+        </div>
+
+        <div className="pick-for-me-actions">
+          <button
+            className="primary-button pick-for-me-button"
+            type="button"
+            disabled={!selection.picks.length || slotSpinning}
+            onClick={spinPickForMe}
+          >
+            {slotSpinning ? 'Spinning…' : randomPick ? 'Spin again' : 'Spin for a pick'}
+          </button>
+          {randomPick ? (
+            <button className="secondary-button" type="button" onClick={() => setSelected(randomPick)}>
+              View this pick
+            </button>
+          ) : null}
+        </div>
       </section>
 
       {selected ? <PickDetails pick={selected} onClose={() => setSelected(null)} /> : null}
@@ -204,6 +294,32 @@ function PickCard({ pick, closesAt, onOpen }: { pick: RecordedPick; closesAt: st
         {closingLabel ? ` · closes ${closingLabel}` : ''}
       </small>
     </button>
+  );
+}
+
+function PickSlotCard({ pick, spinning }: { pick: RecordedPick; spinning: boolean }) {
+  const location = locationForItem(pick.item);
+  return (
+    <div
+      key={`${pick.item.id}-${spinning ? 'spinning' : 'landed'}`}
+      className={`pick-v2-card pick-slot-card pick-v2-card-${pick.item.type}${spinning ? ' is-spinning' : ' is-landed'}`}
+    >
+      <span className={`pick-pennon pick-pennon-${pick.item.type}`} aria-hidden="true">
+        <PickTypeIcon type={pick.item.type} />
+      </span>
+      <div className="pick-v2-center">
+        <strong className="pick-v2-name">{pick.item.name}</strong>
+        <span className="pick-v2-price">{money(pick.item.price)}</span>
+        <span className="pick-v2-restaurant">{location.name}</span>
+      </div>
+      <small className={pick.fitsBudget ? 'pick-v2-fit' : 'pick-v2-over'}>
+        {spinning
+          ? 'spinning…'
+          : pick.fitsBudget
+            ? `${money(pick.remainingAfter)} left after`
+            : `${money(Math.abs(pick.remainingAfter))} over today`}
+      </small>
+    </div>
   );
 }
 
@@ -245,6 +361,15 @@ function RefreshIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M20 6v5h-5M4 18v-5h5M18.2 9A7 7 0 0 0 6.7 6.8L4 9m16 6-2.7 2.2A7 7 0 0 1 5.8 15" />
+    </svg>
+  );
+}
+
+function SlotIcon() {
+  return (
+    <svg className="pick-slot-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="4" y="5" width="14" height="15" rx="3" />
+      <path d="M8 9h2m2 0h2m-6 4h2m2 0h2M18 10h2v6h-2" />
     </svg>
   );
 }
