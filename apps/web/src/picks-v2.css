@@ -166,19 +166,23 @@ button.pick-v2-card:focus-visible {
 }
 
 .pick-for-me-panel {
+  width: min(100%, 720px);
+  box-sizing: border-box;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   justify-items: center;
-  gap: 18px;
-  padding: 28px 24px;
-  border: 1px solid #cfe0d4;
-  border-radius: 18px;
-  background: linear-gradient(135deg, rgba(46, 198, 71, .10), rgba(184, 255, 9, .18));
+  gap: 15px;
+  margin-inline: auto;
+  padding: 24px 22px;
+  border: 1px solid #d8e1db;
+  border-radius: 16px;
+  background: #fbfcfb;
+  box-shadow: 0 8px 26px rgba(29, 66, 50, .055);
   text-align: center;
 }
 
 .pick-for-me-copy {
-  width: min(100%, 620px);
+  width: min(100%, 560px);
   display: grid;
   justify-items: center;
 }
@@ -190,7 +194,7 @@ button.pick-v2-card:focus-visible {
 }
 
 .pick-for-me-panel p:not(.eyebrow) {
-  max-width: 540px;
+  max-width: 510px;
   margin: 7px auto 0;
   color: #607269;
   font-size: 13px;
@@ -199,19 +203,19 @@ button.pick-v2-card:focus-visible {
 }
 
 .pick-slot-machine {
-  width: min(100%, 430px);
+  width: min(100%, 400px);
   display: grid;
-  gap: 9px;
+  gap: 8px;
 }
 
 .pick-slot-window {
   position: relative;
   overflow: hidden;
-  padding: 15px;
-  border: 1px solid rgba(70, 121, 87, .20);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, .55);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .78), 0 12px 30px rgba(26, 71, 49, .07);
+  padding: 12px;
+  border: 1px solid #d8e1db;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(29, 66, 50, .07);
 }
 
 .pick-slot-window::before,
@@ -219,28 +223,28 @@ button.pick-v2-card:focus-visible {
   content: '';
   position: absolute;
   z-index: 2;
-  left: 15px;
-  right: 15px;
-  height: 24px;
+  left: 12px;
+  right: 12px;
+  height: 20px;
   pointer-events: none;
 }
 
 .pick-slot-window::before {
-  top: 15px;
-  background: linear-gradient(to bottom, rgba(248, 252, 249, .78), rgba(248, 252, 249, 0));
+  top: 12px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, .72), rgba(255, 255, 255, 0));
 }
 
 .pick-slot-window::after {
-  bottom: 15px;
-  background: linear-gradient(to top, rgba(248, 252, 249, .72), rgba(248, 252, 249, 0));
+  bottom: 12px;
+  background: linear-gradient(to top, rgba(255, 255, 255, .68), rgba(255, 255, 255, 0));
 }
 
 .pick-slot-card {
   z-index: 1;
   width: 100%;
-  min-height: 196px;
+  min-height: 184px;
   margin: 0;
-  box-shadow: 0 10px 28px rgba(28, 70, 51, .10);
+  box-shadow: 0 8px 22px rgba(28, 70, 51, .08);
 }
 
 .pick-slot-card-empty {
@@ -248,8 +252,8 @@ button.pick-v2-card:focus-visible {
 }
 
 .pick-slot-icon {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   margin-bottom: 2px;
   fill: none;
   stroke: #2e7a4c;
@@ -259,13 +263,14 @@ button.pick-v2-card:focus-visible {
 }
 
 .pick-slot-card.is-spinning {
-  animation: pick-slot-reel-tick 85ms ease-out both;
+  animation: pick-slot-reel-tick .17s cubic-bezier(.22, .72, .32, 1) both;
+  will-change: transform, opacity;
 }
 
 .pick-slot-card.is-landed {
-  animation: pick-slot-land .28s cubic-bezier(.2, .8, .2, 1) both;
+  animation: pick-slot-land .42s cubic-bezier(.18, .84, .24, 1) both;
   border-color: rgba(46, 198, 71, .42);
-  box-shadow: 0 14px 34px rgba(38, 128, 69, .14);
+  box-shadow: 0 12px 30px rgba(38, 128, 69, .12);
 }
 
 .pick-slot-status {
@@ -286,14 +291,25 @@ button.pick-v2-card:focus-visible {
 
 .pick-for-me-button {
   min-width: 154px;
+  color: #fff !important;
+}
+
+.pick-for-me-button:hover:not(:disabled),
+.pick-for-me-button:focus-visible:not(:disabled),
+.pick-for-me-button:active:not(:disabled) {
+  color: #fff !important;
 }
 
 @keyframes pick-slot-reel-tick {
-  from {
-    opacity: .36;
-    transform: translateY(-13px) scale(.985);
+  0% {
+    opacity: .58;
+    transform: translateY(-8px) scale(.993);
   }
-  to {
+  62% {
+    opacity: 1;
+    transform: translateY(1px) scale(1);
+  }
+  100% {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
@@ -301,12 +317,15 @@ button.pick-v2-card:focus-visible {
 
 @keyframes pick-slot-land {
   0% {
-    transform: translateY(-9px) scale(.985);
+    opacity: .84;
+    transform: translateY(-6px) scale(.99);
   }
-  70% {
-    transform: translateY(2px) scale(1.008);
+  68% {
+    opacity: 1;
+    transform: translateY(1px) scale(1.004);
   }
   100% {
+    opacity: 1;
     transform: translateY(0) scale(1);
   }
 }
@@ -354,7 +373,8 @@ button.pick-v2-card:focus-visible {
   }
 
   .pick-for-me-panel {
-    padding: 24px 16px;
+    width: 100%;
+    padding: 20px 14px;
   }
 
   .pick-slot-machine {
@@ -362,20 +382,20 @@ button.pick-v2-card:focus-visible {
   }
 
   .pick-slot-window {
-    padding: 12px;
+    padding: 10px;
   }
 
   .pick-slot-window::before,
   .pick-slot-window::after {
-    left: 12px;
-    right: 12px;
+    left: 10px;
+    right: 10px;
   }
 
-  .pick-slot-window::before { top: 12px; }
-  .pick-slot-window::after { bottom: 12px; }
+  .pick-slot-window::before { top: 10px; }
+  .pick-slot-window::after { bottom: 10px; }
 
   .pick-slot-card {
-    min-height: 176px;
+    min-height: 168px;
   }
 
   .pick-for-me-actions {
