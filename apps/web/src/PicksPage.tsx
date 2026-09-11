@@ -17,6 +17,9 @@ import { money } from '../../../src/ui/utils';
 import type { GetConnectorModel } from './useGetConnector';
 import './picks-v2.css';
 
+const SLOT_TICK_DELAYS = [180, 190, 205, 225, 250, 280, 320, 360];
+const SLOT_LANDING_DELAY = 300;
+
 export function PicksPage({
   remainingToday,
   hasDiningData,
@@ -49,7 +52,7 @@ export function PicksPage({
   }, []);
 
   useEffect(() => () => {
-    if (slotIntervalRef.current !== null) window.clearInterval(slotIntervalRef.current);
+    if (slotIntervalRef.current !== null) window.clearTimeout(slotIntervalRef.current);
     if (slotTimeoutRef.current !== null) window.clearTimeout(slotTimeoutRef.current);
   }, []);
 
@@ -77,7 +80,7 @@ export function PicksPage({
 
   function clearSlotTimers() {
     if (slotIntervalRef.current !== null) {
-      window.clearInterval(slotIntervalRef.current);
+      window.clearTimeout(slotIntervalRef.current);
       slotIntervalRef.current = null;
     }
     if (slotTimeoutRef.current !== null) {
@@ -117,23 +120,29 @@ export function PicksPage({
     setRandomPick(null);
     setSlotSpinning(true);
     let cursor = Math.floor(Math.random() * pool.length);
+    let tick = 0;
     setSlotPreview(pool[cursor] ?? finalPick);
 
-    slotIntervalRef.current = window.setInterval(() => {
+    const advanceReel = () => {
       cursor = (cursor + 1) % pool.length;
       setSlotPreview(pool[cursor] ?? finalPick);
-    }, 85);
+      tick += 1;
 
-    slotTimeoutRef.current = window.setTimeout(() => {
-      if (slotIntervalRef.current !== null) {
-        window.clearInterval(slotIntervalRef.current);
-        slotIntervalRef.current = null;
+      if (tick < SLOT_TICK_DELAYS.length) {
+        slotIntervalRef.current = window.setTimeout(advanceReel, SLOT_TICK_DELAYS[tick]);
+        return;
       }
-      slotTimeoutRef.current = null;
-      setSlotPreview(finalPick);
-      setRandomPick(finalPick);
-      setSlotSpinning(false);
-    }, 1150);
+
+      slotIntervalRef.current = null;
+      slotTimeoutRef.current = window.setTimeout(() => {
+        slotTimeoutRef.current = null;
+        setSlotPreview(finalPick);
+        setRandomPick(finalPick);
+        setSlotSpinning(false);
+      }, SLOT_LANDING_DELAY);
+    };
+
+    slotIntervalRef.current = window.setTimeout(advanceReel, SLOT_TICK_DELAYS[0]);
   }
 
   if (!hasDiningData) {
