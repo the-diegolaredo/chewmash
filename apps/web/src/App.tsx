@@ -6,6 +6,7 @@ import { parseCbordPdfFile } from '../../../src/pdf/cbord';
 import { sanitizeState, type ChewMashState } from '../../../src/storage/state';
 import { latestBalanceSnapshot, localDate, money, spendOnDate } from '../../../src/ui/utils';
 import { ConnectorSummary } from './components/ConnectorSummary';
+import { AboutPage } from './pages/AboutPage';
 import { AccountPage } from './pages/AccountPage';
 import { HomePage } from './pages/HomePage';
 import { UploadPage } from './pages/UploadPage';
@@ -22,7 +23,7 @@ import { PicksPage } from './PicksPage';
 import { useGetConnector, type GetConnectorModel } from './useGetConnector';
 import { WebFloatingNav, type WebPrimaryView } from './WebFloatingNav';
 
-type View = WebPrimaryView | 'account';
+type View = WebPrimaryView | 'account' | 'about';
 
 export function App() {
   const [state, setState] = useState<ChewMashState | null>(null);
@@ -154,7 +155,7 @@ export function App() {
   return (
     <main className="app-shell web-app-shell">
       <header className="app-header">
-        <button className="brand" type="button" onClick={() => setView('home')}>chewmash</button>
+        <button className="brand" type="button" aria-label={view === 'about' ? 'Back to Home' : 'About chewmash and its land acknowledgment'} onClick={() => setView(view === 'about' ? 'home' : 'about')}>chewmash</button>
         <div className="web-header-actions">
           <span className="web-beta-badge">web beta</span>
           <button className="account-link" type="button" onClick={() => setView(view === 'account' ? 'home' : 'account')}>
@@ -167,6 +168,8 @@ export function App() {
 
       {!state || !stats ? (
         <div className="loading">Loading your private dining data…</div>
+      ) : view === 'about' ? (
+        <AboutPage />
       ) : view === 'home' && !hasDiningData ? (
         <WelcomePage
           connector={connector}

@@ -17,6 +17,7 @@ interface NotificationItem {
   kind: NotificationKind;
   title: string;
   detail: string;
+  timestamp: number;
 }
 
 export function SyncUpdatesFab() {
@@ -30,7 +31,7 @@ export function SyncUpdatesFab() {
     try {
       setState(await webStateRepository.load());
     } catch {
-      // The notification center is optional and should never block the dashboard.
+      // Notifications must never block the dashboard.
     }
   }, []);
 
@@ -143,17 +144,17 @@ function NotificationCard({
   onRead: () => void;
 }) {
   return (
-    <div className={`sync-update-card notification-${notification.kind}`}>
-      <button className="notification-read-button" type="button" onClick={onRead} aria-label={`Mark “${notification.title}” as read`} title="Mark as read">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-          <path d="M4 4l8 8M12 4l-8 8" />
-        </svg>
-      </button>
+    <button
+      className={`sync-update-card notification-dismiss notification-${notification.kind}`}
+      type="button"
+      onClick={onRead}
+      aria-label={`Dismiss notification: ${notification.title}. ${notification.detail}`}
+    >
       <div className="sync-update-card-copy">
         <strong>{notification.title}</strong>
         <span>{notification.detail}</span>
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -174,11 +175,14 @@ function buildNotifications({
   const spentToday = spendOnDate(state.transactions, today);
 
   if (dailyTarget > 0 && spentToday > dailyTarget + 0.005) {
+    const todaysTransactions = state.transactions.filter(transaction => String(transaction.date) === today);
+    const timestamp = Math.max(dateTimestamp(today), ...todaysTransactions.map(transactionTimestamp));
     notifications.push({
       id: `budget-over:${today}`,
       kind: 'budget',
       title: 'Over today’s budget',
       detail: `You’ve spent ${money(spentToday)} today — ${money(spentToday - dailyTarget)} over your ${money(dailyTarget)} target.`,
+      timestamp,
     });
   }
 
@@ -191,6 +195,8 @@ function buildNotifications({
         kind: 'sync',
         title: 'GET sync is getting stale',
         detail: `Your last GET sync was ${formatElapsed(now - capturedAt)} ago. Sync again to keep ChewMash current.`,
+        // A sync reminder begins when the 24-hour stale threshold is crossed.
+        timestamp: capturedAt + DAY_MS,
       });
     }
   }
@@ -209,16 +215,36 @@ function buildNotifications({
       kind: 'order',
       title: `Recent order · ${transaction.location || 'Dining purchase'}`,
       detail: `${money(transaction.amount)} · ${humanDate(String(transaction.date))}${transaction.time ? ` at ${transaction.time}` : ''}`,
+      timestamp: transactionTimestamp(transaction),
     });
   }
 
-  return notifications;
+  // Render newest at the TOP and oldest closest to the bell, on web and mobile.
+  return notifications.sort((left, right) => right.timestamp - left.timestamp || left.id.localeCompare(right.id));
+}
+
+function dateTimestamp(date: string): number {
+  const parsed = new Date(`${date}T00:00:00`).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function transactionTimestamp(transaction: DiningTransaction): number {
+  const day = dateTimestamp(String(transaction.date));
+  const match = String(transaction.time ?? '').trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+  if (!match) return day;
+  let hour = Number(match[1]);
+  const minute = Number(match[2]);
+  const second = Number(match[3] ?? 0);
+  if (match[4]) {
+    if (hour < 1 || hour > 12) return day;
+    hour = hour % 12 + (match[4].toUpperCase() === 'PM' ? 12 : 0);
+  }
+  if (hour > 23 || minute > 59 || second > 59) return day;
+  return day + ((hour * 60 + minute) * 60 + second) * 1_000;
 }
 
 function compareTransactionsNewestFirst(left: DiningTransaction, right: DiningTransaction): number {
-  const dateCompare = String(right.date).localeCompare(String(left.date));
-  if (dateCompare !== 0) return dateCompare;
-  return String(right.time ?? '').localeCompare(String(left.time ?? ''));
+  return transactionTimestamp(right) - transactionTimestamp(left);
 }
 
 function formatElapsed(milliseconds: number): string {
@@ -247,6 +273,6 @@ function writeNotificationIds(ids: Set<string>) {
     const values = [...ids].slice(-MAX_READ_IDS);
     localStorage.setItem(READ_NOTIFICATIONS_KEY, JSON.stringify(values));
   } catch {
-    // Notification read state is optional UI metadata and should never block the app.
+    // Read state is optional UI metadata and should never block the app.
   }
 }

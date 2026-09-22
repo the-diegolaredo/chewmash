@@ -5,6 +5,7 @@ import type { PlanSettings } from '../../../src/lib/types';
 import { parseCbordPdfFile } from '../../../src/pdf/cbord';
 import { sanitizeState, type ChewMashState } from '../../../src/storage/state';
 import { latestBalanceSnapshot, localDate, money, spendOnDate } from '../../../src/ui/utils';
+import { AboutPage } from './pages/AboutPage';
 import { AccountPage } from './pages/AccountPage';
 import { HomePage } from './pages/HomePage';
 import { MobileUploadPage } from './pages/MobileUploadPage';
@@ -15,7 +16,7 @@ import type { GetConnectorModel } from './useGetConnector';
 import { useMobileGetSync, type MobileGetSyncModel } from './useMobileGetSync';
 import { WebFloatingNav, type WebPrimaryView } from './WebFloatingNav';
 
-type View = WebPrimaryView | 'account';
+type View = WebPrimaryView | 'account' | 'about';
 
 export function MobileApp() {
   const [state, setState] = useState<ChewMashState | null>(null);
@@ -162,7 +163,7 @@ export function MobileApp() {
   return (
     <main className="app-shell web-app-shell mobile-app-shell">
       <header className="app-header mobile-app-header">
-        <button className="brand" type="button" onClick={() => setView('home')}>chewmash</button>
+        <button className="brand" type="button" aria-label={view === 'about' ? 'Back to Home' : 'About chewmash and its land acknowledgment'} onClick={() => setView(view === 'about' ? 'home' : 'about')}>chewmash</button>
         <div className="web-header-actions">
           <span className="web-beta-badge mobile-beta-badge">ios beta</span>
           {hasDiningData ? (
@@ -177,6 +178,8 @@ export function MobileApp() {
 
       {!state || !stats ? (
         <div className="loading">Opening your private dining data…</div>
+      ) : view === 'about' ? (
+        <AboutPage />
       ) : !hasDiningData ? (
         <MobileWelcome
           sync={mobileSync}
