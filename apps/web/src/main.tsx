@@ -16,6 +16,7 @@ import './modal-polish.css';
 import './mobile-app.css';
 // Keep the shared brand palette last so web and Capacitor render the same accent system.
 import './accent-v2.css';
+import './about.css';
 import { App } from './App';
 import { FirstRunGate } from './FirstRunGate';
 import { MobileApp } from './MobileApp';
