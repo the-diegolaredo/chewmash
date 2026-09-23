@@ -17,7 +17,7 @@ export function AboutPage() {
           </p>
           <p>
             Land acknowledgment is only a starting point. To learn about Native American &amp; Indigenous Cultural Center events and workshops, follow Cal Poly’s NAICC on Instagram at{' '}
-            <a href="https://www.instagram.com/calpolynaicc/" target="_blank" rel="noopener noreferrer">@calpolynaicc</a>.
+            <a href="https://www.instagram.com/calpoly_naicc/" target="_blank" rel="noopener noreferrer">@calpoly_naicc</a>.
           </p>
           <p className="about-source">
             Adapted from{' '}
