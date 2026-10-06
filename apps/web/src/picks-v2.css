@@ -263,12 +263,12 @@ button.pick-v2-card:focus-visible {
 }
 
 .pick-slot-card.is-spinning {
-  animation: pick-slot-reel-tick .17s cubic-bezier(.22, .72, .32, 1) both;
-  will-change: transform, opacity;
+  animation: pick-slot-reel-tick .16s cubic-bezier(.16, .84, .36, 1) both;
+  will-change: transform, opacity, filter;
 }
 
 .pick-slot-card.is-landed {
-  animation: pick-slot-land .42s cubic-bezier(.18, .84, .24, 1) both;
+  animation: pick-slot-land .52s cubic-bezier(.16, .86, .24, 1) both;
   border-color: rgba(46, 198, 71, .42);
   box-shadow: 0 12px 30px rgba(38, 128, 69, .12);
 }
@@ -302,27 +302,33 @@ button.pick-v2-card:focus-visible {
 
 @keyframes pick-slot-reel-tick {
   0% {
-    opacity: .58;
-    transform: translateY(-8px) scale(.993);
+    opacity: .3;
+    transform: translateY(20px) scale(.985);
+    filter: blur(1.5px);
   }
-  62% {
-    opacity: 1;
-    transform: translateY(1px) scale(1);
+  58% {
+    opacity: .94;
+    transform: translateY(-3px) scale(1.003);
+    filter: blur(0);
   }
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
+    filter: blur(0);
   }
 }
 
 @keyframes pick-slot-land {
   0% {
-    opacity: .84;
-    transform: translateY(-6px) scale(.99);
+    opacity: .72;
+    transform: translateY(14px) scale(.985);
   }
-  68% {
+  58% {
     opacity: 1;
-    transform: translateY(1px) scale(1.004);
+    transform: translateY(-3px) scale(1.006);
+  }
+  82% {
+    transform: translateY(1px) scale(.999);
   }
   100% {
     opacity: 1;
@@ -368,8 +374,25 @@ button.pick-v2-card:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .picks-v2-grid .pick-v2-card {
+    width: calc(100% - 18px);
+    margin-inline: auto;
+  }
+
   .pick-v2-card {
     min-height: 160px;
+    padding-left: 58px;
+    padding-right: 58px;
+  }
+
+  .pick-v2-name {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .pick-slot-window .pick-slot-card {
+    width: 100%;
+    margin: 0;
   }
 
   .pick-for-me-panel {

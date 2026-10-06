@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type TouchEvent as ReactTouchEvent } from 'react';
 import pandaLogo from '../assets/brands/panda.svg?url';
 import chickFilALogo from '../assets/brands/chick-fil-a.svg?url';
 import subwayLogo from '../assets/brands/subway.svg?url';
@@ -186,12 +186,16 @@ export function DailySpendChart({
   asOf,
   target,
   currentAverage,
+  interactive = true,
+  renderWidth,
 }: {
   transactions: DiningTransaction[];
   settings: PlanSettings;
   asOf: IsoDate;
   target: number;
   currentAverage: number;
+  interactive?: boolean;
+  renderWidth?: number;
 }) {
   const [selectedDate, setSelectedDate] = useState<IsoDate | null>(null);
   const dates = campusDates(settings).filter(date => date <= asOf);
@@ -200,7 +204,7 @@ export function DailySpendChart({
 
   const values = dates.map(date => totals.get(date) ?? 0);
   const max = Math.max(target * 1.35, currentAverage * 1.15, ...values, 1);
-  const width = 680;
+  const width = renderWidth ?? 680;
   const height = 266;
   const left = 42;
   const right = 14;
@@ -216,10 +220,11 @@ export function DailySpendChart({
   return (
     <>
       <svg
-        className="chart"
+        className={renderWidth ? 'chart daily-chart-fixed-width' : 'chart'}
         viewBox={`0 0 ${width} ${height}`}
+        style={renderWidth ? { width: `${width}px`, height: `${height}px`, maxWidth: 'none' } : undefined}
         role="img"
-        aria-label={`Daily spending line and dot chart. Target average ${money(target)} per campus day. Current average ${money(currentAverage)} per campus day. Select a dot to open that day's spending details.`}
+        aria-label={`Daily spending line and dot chart. Target average ${money(target)} per campus day. Current average ${money(currentAverage)} per campus day.${interactive ? " Select a dot to open that day's spending details." : ''}`}
       >
         <g aria-hidden="true">
           <line
@@ -268,17 +273,17 @@ export function DailySpendChart({
           return (
             <g
               key={date}
-              role="button"
-              tabIndex={0}
-              aria-label={`${fullDate(date)}: ${money(value)}. Open daily spending details.`}
-              onClick={openDetails}
-              onKeyDown={event => {
+              role={interactive ? 'button' : undefined}
+              tabIndex={interactive ? 0 : undefined}
+              aria-label={interactive ? `${fullDate(date)}: ${money(value)}. Open daily spending details.` : undefined}
+              onClick={interactive ? openDetails : undefined}
+              onKeyDown={interactive ? event => {
                 if (event.key === 'Enter' || event.key === ' ') {
                   event.preventDefault();
                   openDetails();
                 }
-              }}
-              style={{ cursor: 'pointer' }}
+              } : undefined}
+              style={interactive ? { cursor: 'pointer' } : undefined}
             >
               <title>{shortDate(String(date))}: {money(value)} · click for details</title>
               <circle cx={x(index)} cy={y(value)} r={10} fill="transparent" />
@@ -298,8 +303,165 @@ export function DailySpendChart({
           </text>
         ))}
       </svg>
-      {selectedDate ? (
+      {interactive && selectedDate ? (
         <DaySpendModal date={selectedDate} transactions={transactions} onClose={() => setSelectedDate(null)} />
+      ) : null}
+    </>
+  );
+}
+
+
+const MOBILE_DAILY_BASE_WIDTH = 820;
+const MOBILE_DAILY_MIN_ZOOM = .72;
+const MOBILE_DAILY_MAX_ZOOM = 2.4;
+
+export function MobileDailySpendExplorer({
+  transactions,
+  settings,
+  asOf,
+  target,
+  currentAverage,
+}: {
+  transactions: DiningTransaction[];
+  settings: PlanSettings;
+  asOf: IsoDate;
+  target: number;
+  currentAverage: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    document.documentElement.classList.add('mobile-chart-open');
+    document.body.classList.add('mobile-chart-open');
+    let active = true;
+
+    void import('@capacitor/screen-orientation')
+      .then(async ({ ScreenOrientation }) => {
+        if (!active) return;
+        await ScreenOrientation.lock({ orientation: 'landscape' });
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+      document.documentElement.classList.remove('mobile-chart-open');
+      document.body.classList.remove('mobile-chart-open');
+      void import('@capacitor/screen-orientation')
+        .then(({ ScreenOrientation }) => ScreenOrientation.lock({ orientation: 'portrait' }))
+        .catch(() => undefined);
+    };
+  }, [open]);
+
+  function closeExplorer() {
+    setOpen(false);
+    setZoom(1);
+    pinchRef.current = null;
+  }
+
+  function openExplorer() {
+    setZoom(1);
+    setOpen(true);
+  }
+
+  function touchDistance(event: ReactTouchEvent<HTMLDivElement>): number {
+    const first = event.touches.item(0);
+    const second = event.touches.item(1);
+    if (!first || !second) return 0;
+    return Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY);
+  }
+
+  function onTouchStart(event: ReactTouchEvent<HTMLDivElement>) {
+    if (event.touches.length !== 2) return;
+    const distance = touchDistance(event);
+    if (distance > 0) pinchRef.current = { distance, zoom };
+  }
+
+  function onTouchMove(event: ReactTouchEvent<HTMLDivElement>) {
+    if (event.touches.length !== 2 || !pinchRef.current) return;
+    const distance = touchDistance(event);
+    if (!distance) return;
+    event.preventDefault();
+    const nextZoom = pinchRef.current.zoom * distance / pinchRef.current.distance;
+    setZoom(Math.min(MOBILE_DAILY_MAX_ZOOM, Math.max(MOBILE_DAILY_MIN_ZOOM, nextZoom)));
+  }
+
+  function onTouchEnd(event: ReactTouchEvent<HTMLDivElement>) {
+    if (event.touches.length < 2) pinchRef.current = null;
+  }
+
+  const renderWidth = Math.round(MOBILE_DAILY_BASE_WIDTH * zoom);
+
+  return (
+    <>
+      <div
+        className="mobile-daily-preview"
+        role="button"
+        tabIndex={0}
+        aria-label="Open Spending by day in landscape"
+        onClick={openExplorer}
+        onKeyDown={event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openExplorer();
+          }
+        }}
+      >
+        <div className="mobile-daily-preview-chart" aria-hidden="true">
+          <DailySpendChart
+            transactions={transactions}
+            settings={settings}
+            asOf={asOf}
+            target={target}
+            currentAverage={currentAverage}
+            interactive={false}
+            renderWidth={680}
+          />
+        </div>
+        <div className="mobile-daily-preview-callout">
+          <strong>Tap to explore</strong>
+          <span>Opens wide in landscape · pinch to zoom</span>
+        </div>
+      </div>
+
+      {open ? (
+        <div className="mobile-chart-modal" role="dialog" aria-modal="true" aria-labelledby="mobile-daily-chart-title">
+          <div className="mobile-chart-modal-header">
+            <div>
+              <span>Spending by day</span>
+              <strong id="mobile-daily-chart-title">Daily spending</strong>
+            </div>
+            <button className="mobile-chart-modal-close" type="button" onClick={closeExplorer} aria-label="Close landscape spending graph">×</button>
+          </div>
+
+          <div
+            className="mobile-chart-modal-scroll"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+            onTouchCancel={onTouchEnd}
+          >
+            <div className="mobile-chart-modal-canvas" style={{ width: `${renderWidth}px` }}>
+              <DailySpendChart
+                transactions={transactions}
+                settings={settings}
+                asOf={asOf}
+                target={target}
+                currentAverage={currentAverage}
+                renderWidth={renderWidth}
+              />
+            </div>
+          </div>
+
+          <div className="mobile-chart-modal-hint">
+            <span>Pinch to contract or expand horizontally</span>
+            <strong>{Math.round(zoom * 100)}%</strong>
+            <span>Swipe left or right to move through the graph</span>
+          </div>
+        </div>
       ) : null}
     </>
   );
@@ -372,7 +534,13 @@ function DiningBrandMark({ brand, cx, cy }: { brand: BrandMark; cx: number; cy: 
   );
 }
 
-export function PlaceSpendChart({ transactions }: { transactions: DiningTransaction[] }) {
+export function PlaceSpendChart({
+  transactions,
+  mobileLayout = false,
+}: {
+  transactions: DiningTransaction[];
+  mobileLayout?: boolean;
+}) {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [hoveredLocation, setHoveredLocation] = useState<string | null>(null);
   const totals = new Map<string, number>();
@@ -386,6 +554,106 @@ export function PlaceSpendChart({ transactions }: { transactions: DiningTransact
 
   const total = [...totals.values()].reduce((sum, value) => sum + value, 0);
   const max = Math.max(...rows.map(([, value]) => value), 1);
+  const greenShades = ['#154f3a', '#1b5a41', '#23654a', '#2d7053', '#397c5e', '#48896a', '#5b9679'];
+
+  if (mobileLayout) {
+    const width = 440;
+    const top = 14;
+    const rowHeight = 66;
+    const height = top * 2 + rows.length * rowHeight;
+    const barLeft = 138;
+    const barRight = 14;
+    const barArea = width - barLeft - barRight;
+
+    return (
+      <>
+        <svg
+          className="chart mobile-place-chart"
+          viewBox={`0 0 ${width} ${height}`}
+          role="img"
+          aria-label="Spending by dining location horizontal bar chart. Select a bar to open location details."
+        >
+          <line className="chart-grid" x1={barLeft} x2={barLeft} y1={top} y2={height - top} />
+          {rows.map(([name, value], index) => {
+            const rowY = top + index * rowHeight;
+            const barWidth = Math.max(10, value / max * barArea);
+            const percent = total ? value / total * 100 : 0;
+            const labelLines = compactLabelLines(name);
+            const active = hoveredLocation === name;
+            const openDetails = () => setSelectedLocation(name);
+            const amountInside = barWidth >= 92;
+
+            return (
+              <g
+                key={name}
+                role="button"
+                tabIndex={0}
+                aria-label={`${name}: ${money(value)}, ${percent.toFixed(1)} percent of itemized location spending. Open recent transactions.`}
+                onClick={openDetails}
+                onKeyDown={event => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    openDetails();
+                  }
+                }}
+                onMouseEnter={() => setHoveredLocation(name)}
+                onMouseLeave={() => setHoveredLocation(current => current === name ? null : current)}
+                onFocus={() => setHoveredLocation(name)}
+                onBlur={() => setHoveredLocation(current => current === name ? null : current)}
+                style={{ cursor: 'pointer', outline: 'none' }}
+              >
+                <title>{name}: {money(value)} · {percent.toFixed(1)}% · tap for recent transactions</title>
+                <rect x={0} y={rowY} width={width} height={rowHeight} fill="transparent" pointerEvents="all" />
+                {index > 0 ? <line className="chart-grid" x1={8} x2={width - 8} y1={rowY} y2={rowY} /> : null}
+                <text
+                  x={barLeft - 12}
+                  y={rowY + 24}
+                  textAnchor="end"
+                  style={{ fill: '#31483d', fontSize: 11, fontWeight: 760, pointerEvents: 'none' }}
+                >
+                  {labelLines.map((line, lineIndex) => (
+                    <tspan key={line} x={barLeft - 12} dy={lineIndex === 0 ? 0 : 14}>{line}</tspan>
+                  ))}
+                </text>
+                <rect
+                  x={barLeft}
+                  y={rowY + 14}
+                  width={barWidth}
+                  height={36}
+                  rx={9}
+                  fill={greenShades[index % greenShades.length]}
+                  stroke={active ? '#bdf39b' : 'transparent'}
+                  strokeWidth={active ? 2 : 0}
+                  style={{
+                    opacity: active ? 1 : .92,
+                    filter: active ? 'drop-shadow(0 5px 6px rgba(21,79,58,.2))' : 'none',
+                    transition: 'opacity .16s ease, filter .16s ease',
+                  }}
+                />
+                <text
+                  x={amountInside ? barLeft + barWidth - 9 : Math.min(width - 10, barLeft + barWidth + 8)}
+                  y={rowY + 37}
+                  textAnchor={amountInside ? 'end' : 'start'}
+                  style={{
+                    fill: amountInside ? '#ffffff' : '#355b4a',
+                    fontSize: 10.5,
+                    fontWeight: 800,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  {percent.toFixed(0)}% · {money(value)}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+        {selectedLocation ? (
+          <LocationSpendModal location={selectedLocation} transactions={transactions} onClose={() => setSelectedLocation(null)} />
+        ) : null}
+      </>
+    );
+  }
+
   const width = 620;
   const height = 300;
   const left = 22;
@@ -396,7 +664,6 @@ export function PlaceSpendChart({ transactions }: { transactions: DiningTransact
   const innerHeight = height - top - bottom;
   const slot = innerWidth / rows.length;
   const barWidth = Math.min(46, slot * 0.58);
-  const greenShades = ['#154f3a', '#1b5a41', '#23654a', '#2d7053', '#397c5e', '#48896a', '#5b9679'];
   const baseline = top + innerHeight;
 
   return (
@@ -495,3 +762,4 @@ export function PlaceSpendChart({ transactions }: { transactions: DiningTransact
     </>
   );
 }
+

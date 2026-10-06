@@ -2,16 +2,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { dailyTargetRemaining } from '../../../../src/lib/budget';
 import type { BudgetStats } from '../../../../src/lib/types';
 import type { ChewMashState } from '../../../../src/storage/state';
-import { DailySpendChart, PlaceSpendChart } from '../../../../src/ui/charts';
+import { DailySpendChart, MobileDailySpendExplorer, PlaceSpendChart } from '../../../../src/ui/charts';
 import { MetricCard, MetricDetailModal, SectionCard } from '../../../../src/ui/components';
 import { humanDate, money, mostRecentDataDate, spendOnDate } from '../../../../src/ui/utils';
 
 type MetricDetail = 'average' | 'today' | 'status' | null;
 
-export function HomePage({ state, stats, today }: {
+export function HomePage({ state, stats, today, mobileMode = false }: {
   state: ChewMashState;
   stats: BudgetStats;
   today: string;
+  mobileMode?: boolean;
 }) {
   const [detailMetric, setDetailMetric] = useState<MetricDetail>(null);
   const [activeMetricIndex, setActiveMetricIndex] = useState(1);
@@ -80,16 +81,31 @@ export function HomePage({ state, stats, today }: {
         </div>
       </section>
 
-      <SectionCard title="Spending by day" action={<span className="section-meta">Select a dot for daily details</span>}>
-        <DailySpendChart
-          transactions={state.transactions}
-          settings={state.plan}
-          asOf={today}
-          target={stats.targetPerCampusDay}
-          currentAverage={stats.averageSpentPerCampusDay}
-        />
+      <SectionCard
+        title="Spending by day"
+        action={<span className="section-meta">{mobileMode ? 'Tap to explore' : 'Select a dot for daily details'}</span>}
+      >
+        {mobileMode ? (
+          <MobileDailySpendExplorer
+            transactions={state.transactions}
+            settings={state.plan}
+            asOf={today}
+            target={stats.targetPerCampusDay}
+            currentAverage={stats.averageSpentPerCampusDay}
+          />
+        ) : (
+          <DailySpendChart
+            transactions={state.transactions}
+            settings={state.plan}
+            asOf={today}
+            target={stats.targetPerCampusDay}
+            currentAverage={stats.averageSpentPerCampusDay}
+          />
+        )}
       </SectionCard>
-      <SectionCard title="Dining locations"><PlaceSpendChart transactions={state.transactions} /></SectionCard>
+      <SectionCard title="Dining locations">
+        <PlaceSpendChart transactions={state.transactions} mobileLayout={mobileMode} />
+      </SectionCard>
 
       {detailMetric === 'average' ? (
         <MetricDetailModal title="Daily average" value={money(stats.averageSpentPerCampusDay)} onClose={() => setDetailMetric(null)}>

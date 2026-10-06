@@ -197,7 +197,7 @@ export function MobileApp() {
           onGoHome={() => setView('home')}
         />
       ) : view === 'home' ? (
-        <HomePage state={state} stats={stats} today={today} />
+        <HomePage state={state} stats={stats} today={today} mobileMode />
       ) : view === 'upload' ? (
         <MobileUploadPage
           sync={mobileSync}
