@@ -206,6 +206,102 @@
   line-height: 1.45;
 }
 
+.dining-plan-choice {
+  min-width: 0;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid #d9e4dc;
+  border-radius: 14px;
+  background: #f8fbf8;
+}
+
+.dining-plan-choice legend {
+  padding: 0 5px;
+  color: #214f3b;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.dining-plan-choice > p {
+  max-width: 610px;
+  margin: 0 0 12px;
+  color: #607269;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.dining-plan-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.dining-plan-option {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 22px;
+  align-items: center;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid #d7dfda;
+  border-radius: 11px;
+  background: #fff;
+  color: #29483a;
+  cursor: pointer;
+  transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.dining-plan-option:hover {
+  transform: translateY(-1px);
+  border-color: #a8c9b2;
+  box-shadow: 0 6px 16px rgba(33, 79, 59, .07);
+}
+
+.dining-plan-option.selected {
+  border-color: #51c95f;
+  background: #f7fff5;
+  box-shadow: 0 0 0 2px rgba(81, 201, 95, .12);
+}
+
+.dining-plan-option input {
+  margin: 0;
+  accent-color: #2fba43;
+}
+
+.dining-plan-option > span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.dining-plan-option strong {
+  color: #214f3b;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.dining-plan-option small {
+  color: #6c7a72;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.dining-plan-option b {
+  width: 20px;
+  color: #2fba43;
+  font-size: 15px;
+  text-align: center;
+}
+
+.dining-plan-choice-compact {
+  margin-top: 10px;
+  padding: 12px;
+}
+
+.dining-plan-choice-compact > p {
+  font-size: 11px;
+}
+
 .first-run-other-options {
   margin: 8px 44px 0;
   border: 1px solid #dce5df;
@@ -588,6 +684,14 @@
 }
 
 @media (max-width: 720px) {
+  .dining-plan-options {
+    grid-template-columns: 1fr;
+  }
+
+  .dining-plan-option {
+    padding: 11px 12px;
+  }
+
   .first-run-shell {
     padding: 18px 12px 34px;
   }
