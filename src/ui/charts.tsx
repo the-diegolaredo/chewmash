@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type TouchEvent as ReactTouchEvent } from 'react';
 import pandaLogo from '../assets/brands/panda.svg?url';
 import chickFilALogo from '../assets/brands/chick-fil-a.svg?url';
 import subwayLogo from '../assets/brands/subway.svg?url';
@@ -186,12 +186,16 @@ export function DailySpendChart({
   asOf,
   target,
   currentAverage,
+  interactive = true,
+  renderWidth,
 }: {
   transactions: DiningTransaction[];
   settings: PlanSettings;
   asOf: IsoDate;
   target: number;
   currentAverage: number;
+  interactive?: boolean;
+  renderWidth?: number;
 }) {
   const [selectedDate, setSelectedDate] = useState<IsoDate | null>(null);
   const dates = campusDates(settings).filter(date => date <= asOf);
@@ -200,7 +204,7 @@ export function DailySpendChart({
 
   const values = dates.map(date => totals.get(date) ?? 0);
   const max = Math.max(target * 1.35, currentAverage * 1.15, ...values, 1);
-  const width = 680;
+  const width = renderWidth ?? 680;
   const height = 266;
   const left = 42;
   const right = 14;
@@ -216,10 +220,11 @@ export function DailySpendChart({
   return (
     <>
       <svg
-        className="chart"
+        className={renderWidth ? 'chart daily-chart-fixed-width' : 'chart'}
         viewBox={`0 0 ${width} ${height}`}
+        style={renderWidth ? { width: `${width}px`, height: `${height}px`, maxWidth: 'none' } : undefined}
         role="img"
-        aria-label={`Daily spending line and dot chart. Target average ${money(target)} per campus day. Current average ${money(currentAverage)} per campus day. Select a dot to open that day's spending details.`}
+        aria-label={`Daily spending line and dot chart. Target average ${money(target)} per campus day. Current average ${money(currentAverage)} per campus day.${interactive ? " Select a dot to open that day's spending details." : ''}`}
       >
         <g aria-hidden="true">
           <line
@@ -268,17 +273,17 @@ export function DailySpendChart({
           return (
             <g
               key={date}
-              role="button"
-              tabIndex={0}
-              aria-label={`${fullDate(date)}: ${money(value)}. Open daily spending details.`}
-              onClick={openDetails}
-              onKeyDown={event => {
+              role={interactive ? 'button' : undefined}
+              tabIndex={interactive ? 0 : undefined}
+              aria-label={interactive ? `${fullDate(date)}: ${money(value)}. Open daily spending details.` : undefined}
+              onClick={interactive ? openDetails : undefined}
+              onKeyDown={interactive ? event => {
                 if (event.key === 'Enter' || event.key === ' ') {
                   event.preventDefault();
                   openDetails();
                 }
-              }}
-              style={{ cursor: 'pointer' }}
+              } : undefined}
+              style={interactive ? { cursor: 'pointer' } : undefined}
             >
               <title>{shortDate(String(date))}: {money(value)} · click for details</title>
               <circle cx={x(index)} cy={y(value)} r={10} fill="transparent" />
@@ -298,8 +303,165 @@ export function DailySpendChart({
           </text>
         ))}
       </svg>
-      {selectedDate ? (
+      {interactive && selectedDate ? (
         <DaySpendModal date={selectedDate} transactions={transactions} onClose={() => setSelectedDate(null)} />
+      ) : null}
+    </>
+  );
+}
+
+
+const MOBILE_DAILY_BASE_WIDTH = 820;
+const MOBILE_DAILY_MIN_ZOOM = .72;
+const MOBILE_DAILY_MAX_ZOOM = 2.4;
+
+export function MobileDailySpendExplorer({
+  transactions,
+  settings,
+  asOf,
+  target,
+  currentAverage,
+}: {
+  transactions: DiningTransaction[];
+  settings: PlanSettings;
+  asOf: IsoDate;
+  target: number;
+  currentAverage: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    document.documentElement.classList.add('mobile-chart-open');
+    document.body.classList.add('mobile-chart-open');
+    let active = true;
+
+    void import('@capacitor/screen-orientation')
+      .then(async ({ ScreenOrientation }) => {
+        if (!active) return;
+        await ScreenOrientation.lock({ orientation: 'landscape' });
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+      document.documentElement.classList.remove('mobile-chart-open');
+      document.body.classList.remove('mobile-chart-open');
+      void import('@capacitor/screen-orientation')
+        .then(({ ScreenOrientation }) => ScreenOrientation.lock({ orientation: 'portrait' }))
+        .catch(() => undefined);
+    };
+  }, [open]);
+
+  function closeExplorer() {
+    setOpen(false);
+    setZoom(1);
+    pinchRef.current = null;
+  }
+
+  function openExplorer() {
+    setZoom(1);
+    setOpen(true);
+  }
+
+  function touchDistance(event: ReactTouchEvent<HTMLDivElement>): number {
+    const first = event.touches.item(0);
+    const second = event.touches.item(1);
+    if (!first || !second) return 0;
+    return Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY);
+  }
+
+  function onTouchStart(event: ReactTouchEvent<HTMLDivElement>) {
+    if (event.touches.length !== 2) return;
+    const distance = touchDistance(event);
+    if (distance > 0) pinchRef.current = { distance, zoom };
+  }
+
+  function onTouchMove(event: ReactTouchEvent<HTMLDivElement>) {
+    if (event.touches.length !== 2 || !pinchRef.current) return;
+    const distance = touchDistance(event);
+    if (!distance) return;
+    event.preventDefault();
+    const nextZoom = pinchRef.current.zoom * distance / pinchRef.current.distance;
+    setZoom(Math.min(MOBILE_DAILY_MAX_ZOOM, Math.max(MOBILE_DAILY_MIN_ZOOM, nextZoom)));
+  }
+
+  function onTouchEnd(event: ReactTouchEvent<HTMLDivElement>) {
+    if (event.touches.length < 2) pinchRef.current = null;
+  }
+
+  const renderWidth = Math.round(MOBILE_DAILY_BASE_WIDTH * zoom);
+
+  return (
+    <>
+      <div
+        className="mobile-daily-preview"
+        role="button"
+        tabIndex={0}
+        aria-label="Open Spending by day in landscape"
+        onClick={openExplorer}
+        onKeyDown={event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openExplorer();
+          }
+        }}
+      >
+        <div className="mobile-daily-preview-chart" aria-hidden="true">
+          <DailySpendChart
+            transactions={transactions}
+            settings={settings}
+            asOf={asOf}
+            target={target}
+            currentAverage={currentAverage}
+            interactive={false}
+            renderWidth={680}
+          />
+        </div>
+        <div className="mobile-daily-preview-callout">
+          <strong>Tap to explore</strong>
+          <span>Opens wide in landscape · pinch to zoom</span>
+        </div>
+      </div>
+
+      {open ? (
+        <div className="mobile-chart-modal" role="dialog" aria-modal="true" aria-labelledby="mobile-daily-chart-title">
+          <div className="mobile-chart-modal-header">
+            <div>
+              <span>Spending by day</span>
+              <strong id="mobile-daily-chart-title">Daily spending</strong>
+            </div>
+            <button className="mobile-chart-modal-close" type="button" onClick={closeExplorer} aria-label="Close landscape spending graph">×</button>
+          </div>
+
+          <div
+            className="mobile-chart-modal-scroll"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+            onTouchCancel={onTouchEnd}
+          >
+            <div className="mobile-chart-modal-canvas" style={{ width: `${renderWidth}px` }}>
+              <DailySpendChart
+                transactions={transactions}
+                settings={settings}
+                asOf={asOf}
+                target={target}
+                currentAverage={currentAverage}
+                renderWidth={renderWidth}
+              />
+            </div>
+          </div>
+
+          <div className="mobile-chart-modal-hint">
+            <span>Pinch to contract or expand horizontally</span>
+            <strong>{Math.round(zoom * 100)}%</strong>
+            <span>Swipe left or right to move through the graph</span>
+          </div>
+        </div>
       ) : null}
     </>
   );
