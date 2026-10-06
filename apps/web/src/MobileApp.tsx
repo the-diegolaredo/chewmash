@@ -5,6 +5,7 @@ import type { PlanSettings } from '../../../src/lib/types';
 import { parseCbordPdfFile } from '../../../src/pdf/cbord';
 import { sanitizeState, type ChewMashState } from '../../../src/storage/state';
 import { latestBalanceSnapshot, localDate, money, spendOnDate } from '../../../src/ui/utils';
+import { DiningPlanChoice } from './components/DiningPlanChoice';
 import { AboutPage } from './pages/AboutPage';
 import { AccountPage } from './pages/AccountPage';
 import { HomePage } from './pages/HomePage';
@@ -73,6 +74,10 @@ export function MobileApp() {
 
   async function importPdfs(files: File[]) {
     if (!files.length) return;
+    if (!state || state.updatedAt === null) {
+      setPdfMessage('Choose your dining plan before importing a statement so ChewMash can calculate your budget correctly.');
+      return;
+    }
     setPdfBusy(true);
     setPdfMessage('Reading statement locally…');
     const messages: string[] = [];
@@ -96,6 +101,15 @@ export function MobileApp() {
     } finally {
       setPdfBusy(false);
     }
+  }
+
+  async function chooseDiningPlan(startingBudget: number) {
+    if (!state) return;
+    const next = await stateRepository.updatePlan({ ...state.plan, startingBudget });
+    setState(next);
+    setPlanDraft({ ...next.plan, awayPeriods: next.plan.awayPeriods.map(period => ({ ...period })) });
+    setPdfMessage(null);
+    setError(null);
   }
 
   async function savePlan() {
@@ -159,6 +173,7 @@ export function MobileApp() {
 
   const primaryTab: WebPrimaryView | null = view === 'picks' || view === 'home' || view === 'upload' ? view : null;
   const hasDiningData = Boolean(state && (state.transactions.length || state.balanceSnapshots.length));
+  const planChosen = Boolean(state && (state.updatedAt !== null || hasDiningData));
 
   return (
     <main className="app-shell web-app-shell mobile-app-shell">
@@ -183,6 +198,8 @@ export function MobileApp() {
       ) : !hasDiningData ? (
         <MobileWelcome
           sync={mobileSync}
+          planBudget={planChosen ? state.plan.startingBudget : null}
+          onChoosePlan={startingBudget => void chooseDiningPlan(startingBudget)}
           onChoosePdf={() => pdfInput.current?.click()}
           onImportBackup={() => backupInput.current?.click()}
           pdfBusy={pdfBusy}
@@ -249,14 +266,17 @@ export function MobileApp() {
   );
 }
 
-function MobileWelcome({ sync, onChoosePdf, onImportBackup, pdfBusy, pdfMessage }: {
+function MobileWelcome({ sync, planBudget, onChoosePlan, onChoosePdf, onImportBackup, pdfBusy, pdfMessage }: {
   sync: MobileGetSyncModel;
+  planBudget: number | null;
+  onChoosePlan: (startingBudget: number) => void;
   onChoosePdf: () => void;
   onImportBackup: () => void;
   pdfBusy: boolean;
   pdfMessage: string | null;
 }) {
   const synced = Boolean(sync.syncStatus && !sync.syncStatus.error);
+  const planChosen = planBudget !== null;
 
   return (
     <section className="mobile-welcome" aria-labelledby="mobile-welcome-title">
@@ -268,23 +288,27 @@ function MobileWelcome({ sync, onChoosePdf, onImportBackup, pdfBusy, pdfMessage 
       </div>
 
       <div className="mobile-setup-progress" aria-label="Connect your Dining Dollars">
-        <MobileSetupStep number={1} done={synced} title="Connect to GET">
+        <MobileSetupStep number={1} done={planChosen} title="Choose your dining plan">
+          <DiningPlanChoice value={planBudget} onChange={onChoosePlan} compact />
+        </MobileSetupStep>
+
+        <MobileSetupStep number={2} done={synced} title="Connect to GET">
           <p>Open a secure in-app GET session from chewmash.</p>
-          <button className="primary-button mobile-sync-button" type="button" onClick={() => void sync.connect()} disabled={sync.busy || !sync.available}>
+          <button className="primary-button mobile-sync-button" type="button" onClick={() => void sync.connect()} disabled={sync.busy || !sync.available || !planChosen}>
             {sync.busy ? 'Opening GET…' : synced ? 'Sync GET again' : 'Connect GET'}
           </button>
           {sync.message ? <div className={sync.syncStatus?.error ? 'setup-message error' : 'setup-message'}>{sync.message}</div> : null}
         </MobileSetupStep>
 
-        <MobileSetupStep number={2} done={synced} title="Sign in with Cal Poly">
+        <MobileSetupStep number={3} done={synced} title="Sign in with Cal Poly">
           <p>Complete Cal Poly and Duo authentication normally inside the temporary GET browser.</p>
         </MobileSetupStep>
 
-        <MobileSetupStep number={3} done={synced} title="Sync Transaction History">
+        <MobileSetupStep number={4} done={synced} title="Sync Transaction History">
           <p>Once GET Transaction History loads, chewmash reads only sanitized dining transaction fields and an optional visible balance.</p>
         </MobileSetupStep>
 
-        <MobileSetupStep number={4} done={synced} title="Open your dashboard">
+        <MobileSetupStep number={5} done={synced} title="Open your dashboard">
           <p>{synced ? 'Your dining data is ready.' : 'Your dashboard opens automatically after the first successful sync or import.'}</p>
         </MobileSetupStep>
       </div>
@@ -292,9 +316,9 @@ function MobileWelcome({ sync, onChoosePdf, onImportBackup, pdfBusy, pdfMessage 
       <details className="first-run-other-options mobile-other-options">
         <summary>Other ways to get started</summary>
         <div className="other-options-body">
-          <p>You can also import a supported GET/CBORD statement PDF or restore a chewmash backup.</p>
+          <p>After choosing your dining plan, you can also import a supported GET/CBORD statement PDF. Restoring a chewmash backup already includes its saved plan.</p>
           <div className="button-row">
-            <button className="secondary-button" type="button" onClick={onChoosePdf} disabled={pdfBusy}>
+            <button className="secondary-button" type="button" onClick={onChoosePdf} disabled={pdfBusy || !planChosen}>
               {pdfBusy ? 'Reading statement…' : 'Import statement PDF'}
             </button>
             <button className="secondary-button" type="button" onClick={onImportBackup}>Restore backup</button>

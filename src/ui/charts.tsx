@@ -188,6 +188,8 @@ export function DailySpendChart({
   currentAverage,
   interactive = true,
   renderWidth,
+  showLegend = true,
+  showXAxisLabels = true,
 }: {
   transactions: DiningTransaction[];
   settings: PlanSettings;
@@ -196,6 +198,8 @@ export function DailySpendChart({
   currentAverage: number;
   interactive?: boolean;
   renderWidth?: number;
+  showLegend?: boolean;
+  showXAxisLabels?: boolean;
 }) {
   const [selectedDate, setSelectedDate] = useState<IsoDate | null>(null);
   const dates = campusDates(settings).filter(date => date <= asOf);
@@ -208,8 +212,8 @@ export function DailySpendChart({
   const height = 266;
   const left = 42;
   const right = 14;
-  const top = 32;
-  const bottom = 34;
+  const top = showLegend ? 32 : 12;
+  const bottom = showXAxisLabels ? 34 : 14;
   const innerWidth = width - left - right;
   const innerHeight = height - top - bottom;
   const x = (index: number) => left + (dates.length === 1 ? innerWidth / 2 : index * innerWidth / (dates.length - 1));
@@ -226,6 +230,7 @@ export function DailySpendChart({
         role="img"
         aria-label={`Daily spending line and dot chart. Target average ${money(target)} per campus day. Current average ${money(currentAverage)} per campus day.${interactive ? " Select a dot to open that day's spending details." : ''}`}
       >
+{showLegend ? (
         <g aria-hidden="true">
           <line
             x1={left}
@@ -248,6 +253,7 @@ export function DailySpendChart({
             Current avg {money(currentAverage)}
           </text>
         </g>
+        ) : null}
         {[0, 1, 2, 3, 4].map(step => {
           const value = max * step / 4;
           const yy = y(value);
@@ -297,11 +303,11 @@ export function DailySpendChart({
             </g>
           );
         })}
-        {labels.map(index => (
+        {showXAxisLabels ? labels.map(index => (
           <text key={index} className="chart-axis" x={x(index)} y={height - 8} textAnchor="middle">
             {shortDate(String(dates[index]))}
           </text>
-        ))}
+        )) : null}
       </svg>
       {interactive && selectedDate ? (
         <DaySpendModal date={selectedDate} transactions={transactions} onClose={() => setSelectedDate(null)} />
@@ -330,7 +336,10 @@ export function MobileDailySpendExplorer({
 }) {
   const [open, setOpen] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const dates = campusDates(settings).filter(date => date <= asOf);
+  const [visibleRange, setVisibleRange] = useState<[number, number]>(() => [0, Math.min(2, Math.max(0, dates.length - 1))]);
   const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -395,6 +404,57 @@ export function MobileDailySpendExplorer({
 
   const renderWidth = Math.round(MOBILE_DAILY_BASE_WIDTH * zoom);
 
+  function updateVisibleRange() {
+    const scroller = scrollRef.current;
+    if (!scroller || !dates.length) return;
+
+    const leftPadding = 42;
+    const rightPadding = 14;
+    const innerWidth = Math.max(1, renderWidth - leftPadding - rightPadding);
+    const viewportStart = scroller.scrollLeft;
+    const viewportEnd = viewportStart + scroller.clientWidth;
+    const positions = dates.map((_, index) => leftPadding + (dates.length === 1 ? innerWidth / 2 : index * innerWidth / (dates.length - 1)));
+
+    let first = positions.findIndex(position => position >= viewportStart);
+    if (first < 0) first = dates.length - 1;
+
+    let last = first;
+    for (let index = first; index < positions.length; index += 1) {
+      if (positions[index]! <= viewportEnd) last = index;
+      else break;
+    }
+
+    if (last === first && first > 0 && positions[first]! > viewportEnd) {
+      first -= 1;
+      last = first;
+    }
+
+    setVisibleRange(current => current[0] === first && current[1] === last ? current : [first, last]);
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    const frame = window.requestAnimationFrame(updateVisibleRange);
+    window.addEventListener('resize', updateVisibleRange);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('resize', updateVisibleRange);
+    };
+  }, [open, renderWidth, dates.length]);
+
+  const visibleStart = dates[visibleRange[0]];
+  const visibleEnd = dates[visibleRange[1]];
+  const visibleMiddle = dates[Math.floor((visibleRange[0] + visibleRange[1]) / 2)];
+  const visibleAxisLabels: [string, string, string] = visibleRange[0] === visibleRange[1]
+    ? ['', visibleStart ? shortDate(String(visibleStart)) : '', '']
+    : visibleRange[1] - visibleRange[0] === 1
+      ? [visibleStart ? shortDate(String(visibleStart)) : '', '', visibleEnd ? shortDate(String(visibleEnd)) : '']
+      : [
+          visibleStart ? shortDate(String(visibleStart)) : '',
+          visibleMiddle ? shortDate(String(visibleMiddle)) : '',
+          visibleEnd ? shortDate(String(visibleEnd)) : '',
+        ];
+
   return (
     <>
       <div
@@ -449,8 +509,15 @@ export function MobileDailySpendExplorer({
               <button className="mobile-chart-modal-close" type="button" onClick={closeExplorer} aria-label="Close spending graph">×</button>
             </div>
 
+            <div className="mobile-chart-static-legend" aria-label="Graph averages">
+              <span><i className="mobile-chart-key-line mobile-chart-key-target" />Target avg <strong>{money(target)}</strong></span>
+              <span><i className="mobile-chart-key-line mobile-chart-key-current" />Current avg <strong>{money(currentAverage)}</strong></span>
+            </div>
+
             <div
+              ref={scrollRef}
               className="mobile-chart-modal-scroll"
+              onScroll={updateVisibleRange}
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
@@ -464,8 +531,16 @@ export function MobileDailySpendExplorer({
                   target={target}
                   currentAverage={currentAverage}
                   renderWidth={renderWidth}
+                  showLegend={false}
+                  showXAxisLabels={false}
                 />
               </div>
+            </div>
+
+            <div className="mobile-chart-viewport-axis" aria-label="Visible date range">
+              <span>{visibleAxisLabels[0]}</span>
+              <span>{visibleAxisLabels[1]}</span>
+              <span>{visibleAxisLabels[2]}</span>
             </div>
 
             <div className="mobile-chart-modal-hint">
