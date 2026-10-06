@@ -25,7 +25,7 @@ export function AccountPage({ state, planDraft, setPlanDraft, updateAway, savePl
   const native = isNativeMobileApp();
 
   return (
-    <div className="page-stack">
+    <div className="page-stack account-page">
       <div className="page-title-row"><div><p className="eyebrow">Plan details and privacy controls</p><h1>Account</h1></div></div>
       <SectionCard title="Plan settings">
         <div className="form-grid">
