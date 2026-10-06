@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { locationForItem, PICK_LOCATIONS, type PickType } from '../../../src/menu/grubhub';
 import { formatClosingTime, openStatusesForLocations } from '../../../src/menu/hours';
 import {
@@ -17,8 +18,13 @@ import { money } from '../../../src/ui/utils';
 import type { GetConnectorModel } from './useGetConnector';
 import './picks-v2.css';
 
-const SLOT_TICK_DELAYS = [180, 190, 205, 225, 250, 280, 320, 360];
-const SLOT_LANDING_DELAY = 300;
+const SLOT_TICK_COUNT = 18;
+const SLOT_LANDING_DELAY = 260;
+
+function slotTickDelay(tick: number): number {
+  const progress = tick / Math.max(1, SLOT_TICK_COUNT - 1);
+  return Math.round(54 + Math.pow(progress, 2.35) * 330);
+}
 
 export function PicksPage({
   remainingToday,
@@ -110,10 +116,15 @@ export function PicksPage({
 
     clearSlotTimers();
 
+    const hapticsModule = Capacitor.isNativePlatform()
+      ? import('@capacitor/haptics').catch(() => null)
+      : Promise.resolve(null);
+
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
       setSlotPreview(finalPick);
       setRandomPick(finalPick);
       setSlotSpinning(false);
+      void hapticsModule.then(module => module?.Haptics.impact({ style: module.ImpactStyle.Light }));
       return;
     }
 
@@ -122,14 +133,16 @@ export function PicksPage({
     let cursor = Math.floor(Math.random() * pool.length);
     let tick = 0;
     setSlotPreview(pool[cursor] ?? finalPick);
+    void hapticsModule.then(module => module?.Haptics.selectionStart());
 
     const advanceReel = () => {
       cursor = (cursor + 1) % pool.length;
       setSlotPreview(pool[cursor] ?? finalPick);
+      void hapticsModule.then(module => module?.Haptics.selectionChanged());
       tick += 1;
 
-      if (tick < SLOT_TICK_DELAYS.length) {
-        slotIntervalRef.current = window.setTimeout(advanceReel, SLOT_TICK_DELAYS[tick]);
+      if (tick < SLOT_TICK_COUNT) {
+        slotIntervalRef.current = window.setTimeout(advanceReel, slotTickDelay(tick));
         return;
       }
 
@@ -139,10 +152,15 @@ export function PicksPage({
         setSlotPreview(finalPick);
         setRandomPick(finalPick);
         setSlotSpinning(false);
+        void hapticsModule.then(async module => {
+          if (!module) return;
+          await module.Haptics.selectionEnd();
+          await module.Haptics.impact({ style: module.ImpactStyle.Medium });
+        });
       }, SLOT_LANDING_DELAY);
     };
 
-    slotIntervalRef.current = window.setTimeout(advanceReel, SLOT_TICK_DELAYS[0]);
+    slotIntervalRef.current = window.setTimeout(advanceReel, slotTickDelay(0));
   }
 
   if (!hasDiningData) {
