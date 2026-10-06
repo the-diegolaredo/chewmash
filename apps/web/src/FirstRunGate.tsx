@@ -3,6 +3,7 @@ import { parseCbordPdfFile } from '../../../src/pdf/cbord';
 import { sanitizeState, type ChewMashState } from '../../../src/storage/state';
 import { migrateLegacyWebState, webStateRepository } from '../../../src/storage/web';
 import { money } from '../../../src/ui/utils';
+import { DiningPlanChoice } from './components/DiningPlanChoice';
 import { useGetConnector } from './useGetConnector';
 
 type GateMode = 'loading' | 'onboarding' | 'complete' | 'app';
@@ -13,6 +14,7 @@ export function FirstRunGate({ children }: { children: ReactNode }) {
   const [syncRequested, setSyncRequested] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [selectedPlanBudget, setSelectedPlanBudget] = useState<number | null>(null);
   const pdfInput = useRef<HTMLInputElement>(null);
   const backupInput = useRef<HTMLInputElement>(null);
 
@@ -30,6 +32,7 @@ export function FirstRunGate({ children }: { children: ReactNode }) {
         const next = await migrateLegacyWebState();
         if (cancelled) return;
         setState(next);
+        setSelectedPlanBudget(next.updatedAt !== null || hasDiningData(next) ? next.plan.startingBudget : null);
         setMode(hasDiningData(next) ? 'app' : 'onboarding');
       } catch {
         if (!cancelled) setMode('onboarding');
@@ -46,13 +49,29 @@ export function FirstRunGate({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(timer);
   }, [mode]);
 
+  async function chooseDiningPlan(startingBudget: number) {
+    if (!state) return;
+    const next = await webStateRepository.updatePlan({ ...state.plan, startingBudget });
+    setState(next);
+    setSelectedPlanBudget(startingBudget);
+    setMessage(null);
+  }
+
   async function startGetSync() {
+    if (selectedPlanBudget === null) {
+      setMessage('Choose your dining plan before syncing GET so ChewMash can calculate your budget correctly.');
+      return;
+    }
     setSyncRequested(true);
     await connector.connect();
   }
 
   async function importPdfs(files: File[]) {
     if (!files.length) return;
+    if (selectedPlanBudget === null) {
+      setMessage('Choose your dining plan before importing a statement so ChewMash can calculate your budget correctly.');
+      return;
+    }
     setPdfBusy(true);
     setMessage('Reading your statement locally…');
     const messages: string[] = [];
@@ -97,6 +116,7 @@ export function FirstRunGate({ children }: { children: ReactNode }) {
 
   const captured = Boolean(connector.syncStatus);
   const done = Boolean(state && hasDiningData(state));
+  const planChosen = selectedPlanBudget !== null;
 
   return (
     <main className={mode === 'complete' ? 'first-run-shell first-run-complete' : 'first-run-shell'}>
@@ -112,7 +132,11 @@ export function FirstRunGate({ children }: { children: ReactNode }) {
         </div>
 
         <div className="setup-progress" aria-label="Get started with chewmash">
-          <SetupStep number={1} done={connector.installed} title="Download the chewmash connector">
+          <SetupStep number={1} done={planChosen} title="Choose your dining plan">
+            <DiningPlanChoice value={selectedPlanBudget} onChange={startingBudget => void chooseDiningPlan(startingBudget)} compact />
+          </SetupStep>
+
+          <SetupStep number={2} done={connector.installed} title="Download the chewmash connector">
             {connector.installed ? (
               <p>Connector{connector.version ? ` v${connector.version}` : ''} detected in this browser.</p>
             ) : (
@@ -130,7 +154,7 @@ export function FirstRunGate({ children }: { children: ReactNode }) {
             )}
           </SetupStep>
 
-          <SetupStep number={2} done={connector.installed} title="Add it to Chrome">
+          <SetupStep number={3} done={connector.installed} title="Add it to Chrome">
             {connector.installed ? (
               <p>You're installed and ready to connect.</p>
             ) : (
@@ -150,10 +174,10 @@ export function FirstRunGate({ children }: { children: ReactNode }) {
             )}
           </SetupStep>
 
-          <SetupStep number={3} done={captured || done} title="Sync your GET history">
+          <SetupStep number={4} done={captured || done} title="Sync your GET history">
             <p>{connector.installed ? 'Open GET from chewmash, sign in normally if needed, and let the connector read Transaction History.' : 'This becomes available as soon as the connector is detected.'}</p>
             {connector.installed && !done ? (
-              <button className="primary-button" type="button" onClick={() => void startGetSync()} disabled={connector.busy}>
+              <button className="primary-button" type="button" onClick={() => void startGetSync()} disabled={connector.busy || !planChosen}>
                 {connector.busy ? 'Opening GET…' : captured ? 'Sync GET again' : 'Sync GET'}
               </button>
             ) : null}
@@ -161,7 +185,7 @@ export function FirstRunGate({ children }: { children: ReactNode }) {
             {connector.message ? <div className="setup-message">{connector.message}</div> : null}
           </SetupStep>
 
-          <SetupStep number={4} done={done} title="See your dashboard">
+          <SetupStep number={5} done={done} title="See your dashboard">
             <p>{done ? 'You’re connected. Opening your dashboard…' : 'Once chewmash receives dining data, your dashboard opens automatically.'}</p>
           </SetupStep>
         </div>
@@ -169,9 +193,9 @@ export function FirstRunGate({ children }: { children: ReactNode }) {
         <details className="first-run-other-options">
           <summary>Other ways to get started</summary>
           <div className="other-options-body">
-            <p>Using Safari, a managed computer, or prefer not to install an extension? Import a supported GET/CBORD statement PDF instead.</p>
+            <p>Using Safari, a managed computer, or prefer not to install an extension? Choose your dining plan above, then import a supported GET/CBORD statement PDF instead.</p>
             <div className="button-row">
-              <button className="secondary-button" type="button" onClick={() => pdfInput.current?.click()} disabled={pdfBusy}>
+              <button className="secondary-button" type="button" onClick={() => pdfInput.current?.click()} disabled={pdfBusy || !planChosen}>
                 {pdfBusy ? 'Reading statement…' : 'Import statement PDF'}
               </button>
               <button className="secondary-button" type="button" onClick={() => backupInput.current?.click()}>
