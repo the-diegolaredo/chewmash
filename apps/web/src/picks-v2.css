@@ -220,23 +220,7 @@ button.pick-v2-card:focus-visible {
 
 .pick-slot-window::before,
 .pick-slot-window::after {
-  content: '';
-  position: absolute;
-  z-index: 2;
-  left: 12px;
-  right: 12px;
-  height: 20px;
-  pointer-events: none;
-}
-
-.pick-slot-window::before {
-  top: 12px;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, .72), rgba(255, 255, 255, 0));
-}
-
-.pick-slot-window::after {
-  bottom: 12px;
-  background: linear-gradient(to top, rgba(255, 255, 255, .68), rgba(255, 255, 255, 0));
+  content: none;
 }
 
 .pick-slot-card {
