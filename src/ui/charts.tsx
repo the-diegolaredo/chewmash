@@ -445,6 +445,15 @@ export function MobileDailySpendExplorer({
   const visibleStart = dates[visibleRange[0]];
   const visibleEnd = dates[visibleRange[1]];
   const visibleMiddle = dates[Math.floor((visibleRange[0] + visibleRange[1]) / 2)];
+  const visibleAxisLabels: [string, string, string] = visibleRange[0] === visibleRange[1]
+    ? ['', visibleStart ? shortDate(String(visibleStart)) : '', '']
+    : visibleRange[1] - visibleRange[0] === 1
+      ? [visibleStart ? shortDate(String(visibleStart)) : '', '', visibleEnd ? shortDate(String(visibleEnd)) : '']
+      : [
+          visibleStart ? shortDate(String(visibleStart)) : '',
+          visibleMiddle ? shortDate(String(visibleMiddle)) : '',
+          visibleEnd ? shortDate(String(visibleEnd)) : '',
+        ];
 
   return (
     <>
@@ -529,9 +538,9 @@ export function MobileDailySpendExplorer({
             </div>
 
             <div className="mobile-chart-viewport-axis" aria-label="Visible date range">
-              <span>{visibleStart ? shortDate(String(visibleStart)) : ''}</span>
-              <span>{visibleMiddle ? shortDate(String(visibleMiddle)) : ''}</span>
-              <span>{visibleEnd ? shortDate(String(visibleEnd)) : ''}</span>
+              <span>{visibleAxisLabels[0]}</span>
+              <span>{visibleAxisLabels[1]}</span>
+              <span>{visibleAxisLabels[2]}</span>
             </div>
 
             <div className="mobile-chart-modal-hint">
