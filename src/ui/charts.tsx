@@ -428,39 +428,52 @@ export function MobileDailySpendExplorer({
       </div>
 
       {open ? (
-        <div className="mobile-chart-modal" role="dialog" aria-modal="true" aria-labelledby="mobile-daily-chart-title">
-          <div className="mobile-chart-modal-header">
-            <div>
-              <span>Spending by day</span>
-              <strong id="mobile-daily-chart-title">Daily spending</strong>
-            </div>
-            <button className="mobile-chart-modal-close" type="button" onClick={closeExplorer} aria-label="Close landscape spending graph">×</button>
-          </div>
-
-          <div
-            className="mobile-chart-modal-scroll"
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
-            onTouchCancel={onTouchEnd}
+        <div
+          className="mobile-chart-modal"
+          role="presentation"
+          onMouseDown={event => {
+            if (event.target === event.currentTarget) closeExplorer();
+          }}
+        >
+          <section
+            className="mobile-chart-modal-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobile-daily-chart-title"
           >
-            <div className="mobile-chart-modal-canvas" style={{ width: `${renderWidth}px` }}>
-              <DailySpendChart
-                transactions={transactions}
-                settings={settings}
-                asOf={asOf}
-                target={target}
-                currentAverage={currentAverage}
-                renderWidth={renderWidth}
-              />
+            <div className="mobile-chart-modal-header">
+              <div>
+                <span>Spending by day</span>
+                <strong id="mobile-daily-chart-title">Daily spending</strong>
+              </div>
+              <button className="mobile-chart-modal-close" type="button" onClick={closeExplorer} aria-label="Close spending graph">×</button>
             </div>
-          </div>
 
-          <div className="mobile-chart-modal-hint">
-            <span>Pinch to contract or expand horizontally</span>
-            <strong>{Math.round(zoom * 100)}%</strong>
-            <span>Swipe left or right to move through the graph</span>
-          </div>
+            <div
+              className="mobile-chart-modal-scroll"
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+              onTouchCancel={onTouchEnd}
+            >
+              <div className="mobile-chart-modal-canvas" style={{ width: `${renderWidth}px` }}>
+                <DailySpendChart
+                  transactions={transactions}
+                  settings={settings}
+                  asOf={asOf}
+                  target={target}
+                  currentAverage={currentAverage}
+                  renderWidth={renderWidth}
+                />
+              </div>
+            </div>
+
+            <div className="mobile-chart-modal-hint">
+              <span>Pinch to contract or expand horizontally</span>
+              <strong>{Math.round(zoom * 100)}%</strong>
+              <span>Swipe left or right to move through the graph</span>
+            </div>
+          </section>
         </div>
       ) : null}
     </>
