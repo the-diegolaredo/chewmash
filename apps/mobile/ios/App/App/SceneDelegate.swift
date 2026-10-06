@@ -9,6 +9,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = scene as? UIWindowScene else { return }
 
         window = UIWindow(windowScene: windowScene)
+        window?.backgroundColor = .white
         // Use ChewMash's bridge subclass so native plugins (including MobileGetSync)
         // are registered before the Capacitor web app loads.
         window?.rootViewController = ChewmashBridgeViewController()
