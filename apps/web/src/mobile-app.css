@@ -115,6 +115,18 @@
   line-height: 1.5;
 }
 
+.mobile-setup-step .dining-plan-choice {
+  width: 100%;
+  max-width: 100%;
+  margin-top: 10px;
+  box-sizing: border-box;
+}
+
+.mobile-setup-step .dining-plan-options,
+.mobile-setup-step .dining-plan-option {
+  min-width: 0;
+}
+
 .mobile-sync-button {
   width: 100%;
   min-height: 48px;
