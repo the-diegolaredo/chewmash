@@ -212,8 +212,8 @@ export function DailySpendChart({
   const height = 266;
   const left = 42;
   const right = 14;
-  const top = 32;
-  const bottom = 34;
+  const top = showLegend ? 32 : 12;
+  const bottom = showXAxisLabels ? 34 : 14;
   const innerWidth = width - left - right;
   const innerHeight = height - top - bottom;
   const x = (index: number) => left + (dates.length === 1 ? innerWidth / 2 : index * innerWidth / (dates.length - 1));
