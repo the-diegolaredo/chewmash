@@ -25,11 +25,20 @@ public final class ChewmashBridgeViewController: CAPBridgeViewController {
     }
 
     private func hideSystemTopScrollEdgeEffect() {
-        // iOS 26 adds a soft scroll-edge treatment at the top of scroll views.
-        // ChewMash already provides a solid white safe area and sticky header, so
-        // hiding this native effect prevents the gray shadow/gradient above them.
-        if #available(iOS 26.0, *) {
-            webView?.scrollView.topEdgeEffect.isHidden = true
+        // Newer iOS versions add a soft scroll-edge treatment at the top of
+        // UIScrollView. The CI runner still builds with an older SDK, so access
+        // the newer public API dynamically when the running OS provides it.
+        guard let scrollView = webView?.scrollView else { return }
+
+        let topEdgeSelector = NSSelectorFromString("topEdgeEffect")
+        guard scrollView.responds(to: topEdgeSelector),
+              let unmanagedEffect = scrollView.perform(topEdgeSelector),
+              let effect = unmanagedEffect.takeUnretainedValue() as? NSObject else {
+            return
+        }
+
+        if effect.responds(to: NSSelectorFromString("setHidden:")) {
+            effect.setValue(true, forKey: "hidden")
         }
     }
 }
