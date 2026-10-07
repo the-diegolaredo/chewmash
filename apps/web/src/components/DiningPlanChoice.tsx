@@ -4,15 +4,20 @@ export function DiningPlanChoice({
   value,
   onChange,
   compact = false,
+  showIntro = true,
 }: {
   value: number | null;
   onChange: (startingBudget: number) => void;
   compact?: boolean;
+  showIntro?: boolean;
 }) {
   return (
-    <fieldset className={compact ? 'dining-plan-choice dining-plan-choice-compact' : 'dining-plan-choice'}>
-      <legend>Choose your dining plan</legend>
-      <p>ChewMash uses your plan balance to calculate your daily target and budget pace. Pick the plan you actually have before syncing dining data.</p>
+    <fieldset
+      className={compact ? 'dining-plan-choice dining-plan-choice-compact' : 'dining-plan-choice'}
+      aria-label={showIntro ? undefined : 'Choose your dining plan'}
+    >
+      {showIntro ? <legend>Choose your dining plan</legend> : null}
+      {showIntro ? <p>ChewMash uses your plan balance to calculate your daily target and budget pace. Pick the plan you actually have before syncing dining data.</p> : null}
       <div className="dining-plan-options">
         {DINING_PLANS.map(plan => {
           const selected = value === plan.startingBudget;
