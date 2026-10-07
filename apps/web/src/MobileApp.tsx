@@ -2,15 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { calculateBudgetStats, dailyTargetRemaining } from '../../../src/lib/budget';
 import { isSupportedDiningPlanBudget } from '../../../src/lib/diningPlans';
 import type { PlanSettings } from '../../../src/lib/types';
-import { parseCbordPdfFile } from '../../../src/pdf/cbord';
 import { sanitizeState, type ChewMashState } from '../../../src/storage/state';
-import { latestBalanceSnapshot, localDate, money, spendOnDate } from '../../../src/ui/utils';
+import { latestBalanceSnapshot, localDate, spendOnDate } from '../../../src/ui/utils';
 import { DiningPlanChoice } from './components/DiningPlanChoice';
 import { AboutPage } from './pages/AboutPage';
 import { AccountPage } from './pages/AccountPage';
 import { HomePage } from './pages/HomePage';
 import { MobileUploadPage } from './pages/MobileUploadPage';
-import { downloadBackup, requestPersistentBrowserStorage } from './platform/browser';
+import { downloadBackup } from './platform/browser';
 import { loadInitialState, stateRepository } from './platform/state';
 import { PicksPage } from './PicksPage';
 import { SessionWelcome } from './SessionWelcome';
@@ -24,10 +23,7 @@ export function MobileApp() {
   const [state, setState] = useState<ChewMashState | null>(null);
   const [view, setView] = useState<View>('home');
   const [error, setError] = useState<string | null>(null);
-  const [pdfMessage, setPdfMessage] = useState<string | null>(null);
-  const [pdfBusy, setPdfBusy] = useState(false);
   const [planDraft, setPlanDraft] = useState<PlanSettings | null>(null);
-  const pdfInput = useRef<HTMLInputElement>(null);
   const backupInput = useRef<HTMLInputElement>(null);
   const mobileSync = useMobileGetSync(setState);
 
@@ -73,43 +69,11 @@ export function MobileApp() {
     [state, today, snapshot],
   );
 
-  async function importPdfs(files: File[]) {
-    if (!files.length) return;
-    if (!state || state.updatedAt === null) {
-      setPdfMessage('Choose your dining plan before importing a statement so ChewMash can calculate your budget correctly.');
-      return;
-    }
-    setPdfBusy(true);
-    setPdfMessage('Reading statement locally…');
-    const messages: string[] = [];
-    try {
-      for (const file of files) {
-        try {
-          const parsed = await parseCbordPdfFile(file);
-          const before = await stateRepository.load();
-          let after = await stateRepository.mergeTransactions(parsed.transactions);
-          const added = Math.max(0, after.transactions.length - before.transactions.length);
-          if (parsed.balanceSnapshot) after = await stateRepository.addBalanceSnapshot(parsed.balanceSnapshot);
-          messages.push(`${file.name}: ${added} new purchase${added === 1 ? '' : 's'}${parsed.balanceSnapshot ? ` · balance ${money(parsed.balanceSnapshot.balance)}` : ''}`);
-          setState(after);
-        } catch (reason) {
-          messages.push(`${file.name}: ${reason instanceof Error ? reason.message : String(reason)}`);
-        }
-      }
-      setPdfMessage(messages.join('\n'));
-      requestPersistentBrowserStorage();
-      await refresh();
-    } finally {
-      setPdfBusy(false);
-    }
-  }
-
   async function chooseDiningPlan(startingBudget: number) {
     if (!state) return;
     const next = await stateRepository.updatePlan({ ...state.plan, startingBudget });
     setState(next);
     setPlanDraft({ ...next.plan, awayPeriods: next.plan.awayPeriods.map(period => ({ ...period })) });
-    setPdfMessage(null);
     setError(null);
   }
 
@@ -159,7 +123,6 @@ export function MobileApp() {
   async function clearDiningData() {
     if (!window.confirm('Clear imported transactions and balance snapshots? Your plan settings will remain.')) return;
     setState(await stateRepository.clearDiningData());
-    setPdfMessage(null);
     setView('home');
   }
 
@@ -168,7 +131,6 @@ export function MobileApp() {
     const reset = await stateRepository.reset();
     setState(reset);
     setPlanDraft({ ...reset.plan, awayPeriods: reset.plan.awayPeriods.map(period => ({ ...period })) });
-    setPdfMessage(null);
     setView('home');
   }
 
@@ -201,10 +163,7 @@ export function MobileApp() {
           sync={mobileSync}
           planBudget={planChosen ? state.plan.startingBudget : null}
           onChoosePlan={startingBudget => void chooseDiningPlan(startingBudget)}
-          onChoosePdf={() => pdfInput.current?.click()}
           onImportBackup={() => backupInput.current?.click()}
-          pdfBusy={pdfBusy}
-          pdfMessage={pdfMessage}
         />
       ) : view === 'picks' ? (
         <PicksPage
@@ -217,13 +176,7 @@ export function MobileApp() {
       ) : view === 'home' ? (
         <HomePage state={state} stats={stats} today={today} mobileMode />
       ) : view === 'upload' ? (
-        <MobileUploadPage
-          sync={mobileSync}
-          onChoosePdf={() => pdfInput.current?.click()}
-          onFiles={importPdfs}
-          pdfBusy={pdfBusy}
-          pdfMessage={pdfMessage}
-        />
+        <MobileUploadPage sync={mobileSync} />
       ) : (
         <AccountPage
           state={state}
@@ -238,18 +191,6 @@ export function MobileApp() {
         />
       )}
 
-      <input
-        ref={pdfInput}
-        className="hidden-input"
-        type="file"
-        accept="application/pdf,.pdf"
-        multiple
-        onChange={event => {
-          const files = [...(event.target.files ?? [])];
-          if (files.length) void importPdfs(files);
-          event.currentTarget.value = '';
-        }}
-      />
       <input
         ref={backupInput}
         className="hidden-input"
@@ -268,14 +209,11 @@ export function MobileApp() {
   );
 }
 
-function MobileWelcome({ sync, planBudget, onChoosePlan, onChoosePdf, onImportBackup, pdfBusy, pdfMessage }: {
+function MobileWelcome({ sync, planBudget, onChoosePlan, onImportBackup }: {
   sync: MobileGetSyncModel;
   planBudget: number | null;
   onChoosePlan: (startingBudget: number) => void;
-  onChoosePdf: () => void;
   onImportBackup: () => void;
-  pdfBusy: boolean;
-  pdfMessage: string | null;
 }) {
   const synced = Boolean(sync.syncStatus && !sync.syncStatus.error);
   const planChosen = planBudget !== null;
@@ -311,21 +249,17 @@ function MobileWelcome({ sync, planBudget, onChoosePlan, onChoosePdf, onImportBa
         </MobileSetupStep>
 
         <MobileSetupStep number={5} done={synced} title="Open your dashboard">
-          <p>{synced ? 'Your dining data is ready.' : 'Your dashboard opens automatically after the first successful sync or import.'}</p>
+          <p>{synced ? 'Your dining data is ready.' : 'Your dashboard opens automatically after the first successful sync.'}</p>
         </MobileSetupStep>
       </div>
 
       <details className="first-run-other-options mobile-other-options">
-        <summary>Other ways to get started</summary>
+        <summary>Restore an existing chewmash backup</summary>
         <div className="other-options-body">
-          <p>After choosing your dining plan, you can also import a supported GET/CBORD statement PDF. Restoring a chewmash backup already includes its saved plan.</p>
+          <p>If you already have a chewmash backup, you can restore it here. Your saved dining plan and dining data will come with it.</p>
           <div className="button-row">
-            <button className="secondary-button" type="button" onClick={onChoosePdf} disabled={pdfBusy || !planChosen}>
-              {pdfBusy ? 'Reading statement…' : 'Import statement PDF'}
-            </button>
             <button className="secondary-button" type="button" onClick={onImportBackup}>Restore backup</button>
           </div>
-          {pdfMessage ? <pre className="import-message">{pdfMessage}</pre> : null}
         </div>
       </details>
 
