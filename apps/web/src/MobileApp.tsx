@@ -224,12 +224,11 @@ function MobileWelcome({ sync, planBudget, onChoosePlan, onImportBackup }: {
         <p className="eyebrow">Dining Dollars, made simple</p>
         <h1 id="mobile-welcome-title">Welcome to chewmash</h1>
         <p className="mobile-welcome-tagline">Your everything dining app.</p>
-        <p>Connect GET directly inside chewmash. No Chrome extension, ZIP file, or desktop computer is required.</p>
       </div>
 
       <div className="mobile-setup-progress" aria-label="Connect your Dining Dollars">
         <MobileSetupStep number={1} done={planChosen} title="Choose your dining plan">
-          <DiningPlanChoice value={planBudget} onChange={onChoosePlan} compact />
+          <DiningPlanChoice value={planBudget} onChange={onChoosePlan} compact showIntro={false} />
         </MobileSetupStep>
 
         <MobileSetupStep number={2} done={synced} title="Connect to GET">
@@ -264,8 +263,7 @@ function MobileWelcome({ sync, planBudget, onChoosePlan, onImportBackup }: {
       </details>
 
       <div className="mobile-welcome-privacy">
-        <strong>Private by default.</strong>
-        <span>chewmash never asks for or reads your Cal Poly password, Duo prompt, cookies, session tokens, student ID, card number, or raw GET page HTML.</span>
+        <span><strong>chewmash</strong> never asks for or reads your Cal Poly password</span>
       </div>
     </section>
   );
