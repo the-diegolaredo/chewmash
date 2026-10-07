@@ -200,6 +200,27 @@
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+.mobile-app-shell .session-welcome-overlay {
+  padding:
+    max(18px, env(safe-area-inset-top))
+    max(16px, env(safe-area-inset-right))
+    max(18px, env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
+}
+
+.mobile-app-shell .session-welcome-card {
+  width: min(100%, 520px);
+  padding: clamp(46px, 12vw, 70px) 22px;
+}
+
+.mobile-app-shell .session-welcome-brand {
+  font-size: clamp(54px, 18vw, 78px);
+}
+
+.mobile-app-shell .session-welcome-greeting {
+  font-size: clamp(20px, 6vw, 28px);
+}
+
 html.mobile-chart-open,
 body.mobile-chart-open {
   overflow: hidden;
