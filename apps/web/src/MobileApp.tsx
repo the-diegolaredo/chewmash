@@ -131,7 +131,6 @@ export function MobileApp() {
     const reset = await stateRepository.reset();
     setState(reset);
     setPlanDraft({ ...reset.plan, awayPeriods: reset.plan.awayPeriods.map(period => ({ ...period })) });
-    setPdfMessage(null);
     setView('home');
   }
 
