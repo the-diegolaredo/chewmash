@@ -201,15 +201,16 @@
 }
 
 .mobile-app-shell .session-welcome-overlay {
+  place-items: center;
   padding:
-    max(18px, env(safe-area-inset-top))
+    0
     max(16px, env(safe-area-inset-right))
-    max(18px, env(safe-area-inset-bottom))
+    0
     max(16px, env(safe-area-inset-left));
 }
 
 .mobile-app-shell .session-welcome-card {
-  width: min(100%, 520px);
+  width: min(calc(100vw - 32px), 520px);
   padding: clamp(46px, 12vw, 70px) 22px;
 }
 
@@ -613,6 +614,10 @@ body.mobile-chart-open {
 
   .mobile-app-shell .pick-v2-card {
     min-height: 178px;
+  }
+
+  .mobile-app-shell .picks-v2-source {
+    display: none;
   }
 }
 
