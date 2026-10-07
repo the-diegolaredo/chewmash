@@ -13,6 +13,7 @@ import { MobileUploadPage } from './pages/MobileUploadPage';
 import { downloadBackup, requestPersistentBrowserStorage } from './platform/browser';
 import { loadInitialState, stateRepository } from './platform/state';
 import { PicksPage } from './PicksPage';
+import { SessionWelcome } from './SessionWelcome';
 import type { GetConnectorModel } from './useGetConnector';
 import { useMobileGetSync, type MobileGetSyncModel } from './useMobileGetSync';
 import { WebFloatingNav, type WebPrimaryView } from './WebFloatingNav';
@@ -262,6 +263,7 @@ export function MobileApp() {
       />
 
       {hasDiningData ? <WebFloatingNav page={primaryTab} onChange={setView} /> : null}
+      {hasDiningData ? <SessionWelcome><></></SessionWelcome> : null}
     </main>
   );
 }
