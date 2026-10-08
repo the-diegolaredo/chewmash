@@ -18,9 +18,16 @@ public final class MobileThemePlugin: CAPPlugin, CAPBridgedPlugin {
                 return
             }
 
-            let style: UIUserInterfaceStyle = mode == "dark" ? .dark : .light
+            let isDark = mode == "dark"
+            let style: UIUserInterfaceStyle = isDark ? .dark : .light
+            let background = isDark ? UIColor(red: 15 / 255, green: 20 / 255, blue: 17 / 255, alpha: 1) : .white
+
             viewController.overrideUserInterfaceStyle = style
             viewController.view.window?.overrideUserInterfaceStyle = style
+            viewController.view.backgroundColor = background
+            if let bridgeController = viewController as? CAPBridgeViewController {
+                bridgeController.webView?.scrollView.backgroundColor = background
+            }
             viewController.setNeedsStatusBarAppearanceUpdate()
             call.resolve()
         }
