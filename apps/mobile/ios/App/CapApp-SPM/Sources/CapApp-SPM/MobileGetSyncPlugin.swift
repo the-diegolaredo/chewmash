@@ -115,9 +115,11 @@ private final class MobileGetSyncViewController: UIViewController, WKNavigationD
         )
 
         let configuration = WKWebViewConfiguration()
-        // Keep credentials/session cookies out of chewmash storage. The first production
-        // version intentionally requires a fresh authentication session for each sync.
-        configuration.websiteDataStore = .nonPersistent()
+        // Reuse WebKit's persistent website data store so Cal Poly/GET/Duo can keep
+        // their normal session and trusted-browser cookies between syncs. ChewMash
+        // still never reads password fields, Duo prompts, cookies, or session tokens;
+        // WebKit manages that authentication state just like a regular browser.
+        configuration.websiteDataStore = .default()
         configuration.preferences.javaScriptCanOpenWindowsAutomatically = true
 
         webView = WKWebView(frame: .zero, configuration: configuration)
