@@ -4,7 +4,7 @@ import Capacitor
 @objc(ChewmashBridgeViewController)
 public final class ChewmashBridgeViewController: CAPBridgeViewController {
     public override var preferredStatusBarStyle: UIStatusBarStyle {
-        .darkContent
+        traitCollection.userInterfaceStyle == .dark ? .lightContent : .darkContent
     }
 
     public override func viewDidLoad() {
@@ -21,6 +21,7 @@ public final class ChewmashBridgeViewController: CAPBridgeViewController {
 
     public override func capacitorDidLoad() {
         bridge?.registerPluginInstance(MobileGetSyncPlugin())
+        bridge?.registerPluginInstance(MobileThemePlugin())
         hideSystemTopScrollEdgeEffect()
     }
 
