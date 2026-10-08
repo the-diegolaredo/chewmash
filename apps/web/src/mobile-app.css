@@ -1007,3 +1007,87 @@ body.mobile-chart-open {
 .mobile-app-shell.mobile-theme-dark .session-welcome-greeting {
   color: #c4d0c8;
 }
+
+
+/* Dark-mode contrast pass for the main dashboard and Picks surfaces. */
+.mobile-app-shell.mobile-theme-dark .home-page .metrics-carousel,
+.mobile-app-shell.mobile-theme-dark .picks-v2-board {
+  border-color: #31513d;
+  background: #183226;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .28);
+}
+
+.mobile-app-shell.mobile-theme-dark .home-page .metrics-carousel::before,
+.mobile-app-shell.mobile-theme-dark .picks-v2-board-heading h2 {
+  color: #f2f8f3;
+}
+
+.mobile-app-shell.mobile-theme-dark .home-page .metric-strip {
+  border-color: #2b4635;
+  background: #10231a;
+}
+
+.mobile-app-shell.mobile-theme-dark .home-page .metric-card,
+.mobile-app-shell.mobile-theme-dark .home-page .metric-card.active,
+.mobile-app-shell.mobile-theme-dark .home-page .metric-card:hover,
+.mobile-app-shell.mobile-theme-dark .home-page .metric-card.active:hover {
+  border-color: #355742;
+  background: #17281e;
+}
+
+.mobile-app-shell.mobile-theme-dark .picks-v2-board .eyebrow {
+  color: #84f18b;
+}
+
+.mobile-app-shell.mobile-theme-dark .mobile-place-chart text {
+  fill: #ffffff !important;
+}
+
+.mobile-app-shell.mobile-theme-dark .mobile-place-chart .chart-grid {
+  stroke: #395044;
+}
+
+/* Land acknowledgement should fully participate in native dark mode. */
+.mobile-app-shell.mobile-theme-dark:has(> .about-page) {
+  background-color: #0d1711;
+  background-image:
+    linear-gradient(180deg, rgba(4, 15, 9, .38), rgba(4, 15, 9, .66)),
+    url('/images/slo-landscape.webp');
+}
+
+.mobile-app-shell.mobile-theme-dark .about-card {
+  border-color: rgba(105, 224, 120, .22);
+  background: rgba(19, 42, 29, .96);
+  color: #dff5e3;
+  box-shadow: 0 24px 72px rgba(0, 0, 0, .44);
+}
+
+.mobile-app-shell.mobile-theme-dark .about-card-header {
+  border-bottom-color: #365442;
+}
+
+.mobile-app-shell.mobile-theme-dark .about-card-header h1 {
+  color: #ffffff;
+}
+
+.mobile-app-shell.mobile-theme-dark .about-card-header p {
+  color: #a6c9ae;
+}
+
+.mobile-app-shell.mobile-theme-dark .about-card-copy p,
+.mobile-app-shell.mobile-theme-dark .about-card-copy .about-source {
+  color: #b8dfbf !important;
+}
+
+.mobile-app-shell.mobile-theme-dark .about-card-copy .about-source {
+  border-top-color: #365442;
+}
+
+.mobile-app-shell.mobile-theme-dark .about-card-copy a {
+  color: #79ee82;
+}
+
+.mobile-app-shell.mobile-theme-dark .about-card-copy a:hover,
+.mobile-app-shell.mobile-theme-dark .about-card-copy a:focus-visible {
+  color: #a1f6a6;
+}
