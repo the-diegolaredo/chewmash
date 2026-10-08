@@ -72,7 +72,14 @@ export function MobileApp() {
   useEffect(() => {
     localStorage.setItem(MOBILE_THEME_KEY, theme);
     document.documentElement.style.colorScheme = theme;
+    document.documentElement.classList.toggle('mobile-theme-dark', theme === 'dark');
+    document.body.classList.toggle('mobile-theme-dark', theme === 'dark');
     void setNativeMobileTheme(theme).catch(() => undefined);
+
+    return () => {
+      document.documentElement.classList.remove('mobile-theme-dark');
+      document.body.classList.remove('mobile-theme-dark');
+    };
   }, [theme]);
 
   const today = localDate();
