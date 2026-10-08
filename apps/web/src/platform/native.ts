@@ -18,6 +18,12 @@ interface MobileGetSyncPlugin {
 }
 
 const MobileGetSync = registerPlugin<MobileGetSyncPlugin>('MobileGetSync');
+interface MobileThemePlugin {
+  setTheme(options: { mode: 'light' | 'dark' }): Promise<void>;
+}
+
+const MobileTheme = registerPlugin<MobileThemePlugin>('MobileTheme');
+
 
 export function isNativeMobileApp(): boolean {
   return Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
@@ -28,4 +34,10 @@ export async function captureGetOnDevice(): Promise<MobileGetCapturePayload> {
     throw new Error('Native GET sync is only available inside the chewmash iOS app.');
   }
   return MobileGetSync.sync({ captureScript: mobileCaptureScript });
+}
+
+
+export async function setNativeMobileTheme(mode: 'light' | 'dark'): Promise<void> {
+  if (!isNativeMobileApp()) return;
+  await MobileTheme.setTheme({ mode });
 }
