@@ -37,6 +37,49 @@
   text-transform: lowercase;
 }
 
+.mobile-header-actions {
+  gap: 8px;
+}
+
+.mobile-header-icon-button {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #151b17;
+  transition: background .16s ease, color .16s ease, transform .16s ease;
+}
+
+.mobile-header-icon-button:active {
+  transform: scale(.94);
+}
+
+.mobile-header-icon-button:hover,
+.mobile-header-icon-button:focus-visible,
+.mobile-header-icon-button.active {
+  background: rgba(58, 198, 81, .11);
+  color: #168b2c;
+}
+
+.mobile-header-icon-button:focus-visible {
+  outline: 2px solid rgba(58, 198, 81, .3);
+  outline-offset: 2px;
+}
+
+.mobile-header-icon-button svg {
+  width: 23px;
+  height: 23px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .mobile-app-shell > .page-stack,
 .mobile-app-shell > .mobile-welcome,
 .mobile-app-shell > .loading,
@@ -649,4 +692,318 @@ body.mobile-chart-open {
   .mobile-welcome-hero {
     padding: 22px 18px;
   }
+}
+
+
+/* Native iOS dark theme. The green ChewMash accent remains intentionally bright. */
+.mobile-app-shell.mobile-theme-dark {
+  background: #0f1411;
+  color: #edf5ef;
+  color-scheme: dark;
+}
+
+.mobile-app-shell.mobile-theme-dark::before,
+.mobile-app-shell.mobile-theme-dark .mobile-app-header {
+  background: #0b100d;
+}
+
+.mobile-app-shell.mobile-theme-dark .mobile-app-header {
+  border-bottom-color: #273129;
+}
+
+.mobile-app-shell.mobile-theme-dark .mobile-header-icon-button {
+  color: #f2f6f3;
+}
+
+.mobile-app-shell.mobile-theme-dark .mobile-header-icon-button:hover,
+.mobile-app-shell.mobile-theme-dark .mobile-header-icon-button:focus-visible,
+.mobile-app-shell.mobile-theme-dark .mobile-header-icon-button.active {
+  background: rgba(91, 224, 105, .14);
+  color: #76ef7c;
+}
+
+.mobile-app-shell.mobile-theme-dark h1,
+.mobile-app-shell.mobile-theme-dark h2,
+.mobile-app-shell.mobile-theme-dark h3,
+.mobile-app-shell.mobile-theme-dark .metric-value,
+.mobile-app-shell.mobile-theme-dark .metric-note strong,
+.mobile-app-shell.mobile-theme-dark .section-heading strong,
+.mobile-app-shell.mobile-theme-dark .pick-v2-name,
+.mobile-app-shell.mobile-theme-dark .pick-for-me-panel h2,
+.mobile-app-shell.mobile-theme-dark .pick-directions > strong,
+.mobile-app-shell.mobile-theme-dark .detail-grid strong,
+.mobile-app-shell.mobile-theme-dark .form-subheading,
+.mobile-app-shell.mobile-theme-dark .transaction-table td,
+.mobile-app-shell.mobile-theme-dark .dining-plan-option strong,
+.mobile-app-shell.mobile-theme-dark .mobile-chart-modal-header strong {
+  color: #f1f6f2;
+}
+
+.mobile-app-shell.mobile-theme-dark p,
+.mobile-app-shell.mobile-theme-dark .subtle,
+.mobile-app-shell.mobile-theme-dark .metric-label,
+.mobile-app-shell.mobile-theme-dark .metric-note,
+.mobile-app-shell.mobile-theme-dark .section-copy,
+.mobile-app-shell.mobile-theme-dark .section-meta,
+.mobile-app-shell.mobile-theme-dark .pick-v2-context span,
+.mobile-app-shell.mobile-theme-dark .pick-v2-restaurant,
+.mobile-app-shell.mobile-theme-dark .pick-for-me-panel p:not(.eyebrow),
+.mobile-app-shell.mobile-theme-dark .pick-slot-status,
+.mobile-app-shell.mobile-theme-dark .form-grid label,
+.mobile-app-shell.mobile-theme-dark .away-row label,
+.mobile-app-shell.mobile-theme-dark .transaction-table th,
+.mobile-app-shell.mobile-theme-dark .empty-cell,
+.mobile-app-shell.mobile-theme-dark .dining-plan-option small {
+  color: #9eada4 !important;
+}
+
+.mobile-app-shell.mobile-theme-dark .eyebrow,
+.mobile-app-shell.mobile-theme-dark .metric-more,
+.mobile-app-shell.mobile-theme-dark .pick-v2-price,
+.mobile-app-shell.mobile-theme-dark .pick-v2-context strong,
+.mobile-app-shell.mobile-theme-dark .pick-detail-restaurant,
+.mobile-app-shell.mobile-theme-dark .mobile-welcome-tagline,
+.mobile-app-shell.mobile-theme-dark .mobile-chart-static-legend strong {
+  color: #6de878;
+}
+
+.mobile-app-shell.mobile-theme-dark .section-card,
+.mobile-app-shell.mobile-theme-dark .metric-card,
+.mobile-app-shell.mobile-theme-dark .metric-card.active,
+.mobile-app-shell.mobile-theme-dark .pick-v2-card,
+.mobile-app-shell.mobile-theme-dark .pick-for-me-panel,
+.mobile-app-shell.mobile-theme-dark .pick-slot-window,
+.mobile-app-shell.mobile-theme-dark .picks-v2-context,
+.mobile-app-shell.mobile-theme-dark .mobile-daily-preview,
+.mobile-app-shell.mobile-theme-dark .notice,
+.mobile-app-shell.mobile-theme-dark .metric-modal,
+.mobile-app-shell.mobile-theme-dark .detail-grid > div,
+.mobile-app-shell.mobile-theme-dark .away-row {
+  border-color: #2c3830;
+  background: #171e1a;
+}
+
+.mobile-app-shell.mobile-theme-dark .metric-card {
+  background: #1b231e;
+}
+
+.mobile-app-shell.mobile-theme-dark .metric-card.active {
+  background: #202a23;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .32);
+}
+
+.mobile-app-shell.mobile-theme-dark .metric-card:hover {
+  border-color: #3a5140;
+  background: #202a23;
+}
+
+.mobile-app-shell.mobile-theme-dark .section-card,
+.mobile-app-shell.mobile-theme-dark .pick-for-me-panel,
+.mobile-app-shell.mobile-theme-dark .pick-v2-card,
+.mobile-app-shell.mobile-theme-dark .pick-slot-window {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .22);
+}
+
+.mobile-app-shell.mobile-theme-dark .pick-v2-placeholder {
+  background: #141a16;
+  color: #84958b;
+}
+
+.mobile-app-shell.mobile-theme-dark .pick-v2-placeholder strong {
+  color: #b8c6bd;
+}
+
+.mobile-app-shell.mobile-theme-dark .pick-v2-fit {
+  color: #76d98a;
+}
+
+.mobile-app-shell.mobile-theme-dark .pick-v2-over {
+  color: #ff8989;
+}
+
+.mobile-app-shell.mobile-theme-dark .mobile-welcome-hero {
+  border-color: #2b3930;
+  background: linear-gradient(145deg, #171f1a 0%, #112016 100%);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, .24);
+}
+
+.mobile-app-shell.mobile-theme-dark .mobile-welcome-hero h1 {
+  color: #f3f7f4;
+}
+
+.mobile-app-shell.mobile-theme-dark .mobile-setup-progress,
+.mobile-app-shell.mobile-theme-dark .dining-plan-choice,
+.mobile-app-shell.mobile-theme-dark .dining-plan-option,
+.mobile-app-shell.mobile-theme-dark .first-run-other-options,
+.mobile-app-shell.mobile-theme-dark .mobile-welcome-privacy,
+.mobile-app-shell.mobile-theme-dark .mobile-privacy-inline {
+  border-color: #2b3930;
+  background: #171e1a;
+  color: #a9b7ae;
+}
+
+.mobile-app-shell.mobile-theme-dark .mobile-setup-step + .mobile-setup-step,
+.mobile-app-shell.mobile-theme-dark .other-options-body {
+  border-color: #28332c;
+}
+
+.mobile-app-shell.mobile-theme-dark .setup-step-copy h2,
+.mobile-app-shell.mobile-theme-dark .dining-plan-choice legend,
+.mobile-app-shell.mobile-theme-dark .mobile-welcome-privacy strong,
+.mobile-app-shell.mobile-theme-dark .mobile-privacy-inline strong,
+.mobile-app-shell.mobile-theme-dark .first-run-other-options > summary {
+  color: #dff5e3;
+}
+
+.mobile-app-shell.mobile-theme-dark .setup-step-marker {
+  border-color: #415047;
+  background: #101612;
+  color: #e8f0ea;
+}
+
+.mobile-app-shell.mobile-theme-dark .setup-step.done .setup-step-marker {
+  border-color: rgba(91, 224, 105, .6);
+  background: rgba(91, 224, 105, .14);
+  color: #8af193;
+}
+
+.mobile-app-shell.mobile-theme-dark .dining-plan-option.selected {
+  border-color: #50d75e;
+  background: #16271a;
+  box-shadow: 0 0 0 2px rgba(80, 215, 94, .13);
+}
+
+.mobile-app-shell.mobile-theme-dark .secondary-button {
+  border-color: #3a473f;
+  background: #171e1a;
+  color: #e9f0eb;
+}
+
+.mobile-app-shell.mobile-theme-dark .secondary-button:hover,
+.mobile-app-shell.mobile-theme-dark .secondary-button:focus-visible {
+  border-color: #5aca66;
+  background: #202a23;
+}
+
+.mobile-app-shell.mobile-theme-dark .danger-button {
+  border-color: #724a4d;
+  background: #211719;
+  color: #ff9da2;
+}
+
+.mobile-app-shell.mobile-theme-dark .form-grid input,
+.mobile-app-shell.mobile-theme-dark .form-grid select,
+.mobile-app-shell.mobile-theme-dark .away-row input {
+  border-color: #39463e;
+  background: #111713;
+  color: #eef4ef;
+}
+
+.mobile-app-shell.mobile-theme-dark .transaction-table th {
+  border-bottom-color: #344038;
+}
+
+.mobile-app-shell.mobile-theme-dark .transaction-table td {
+  border-bottom-color: #263029;
+}
+
+.mobile-app-shell.mobile-theme-dark .web-floating-nav {
+  border-color: #2d3931;
+  background: rgba(18, 25, 20, .97);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .42);
+}
+
+.mobile-app-shell.mobile-theme-dark .web-floating-nav .nav-item {
+  color: #c3cec6;
+}
+
+.mobile-app-shell.mobile-theme-dark .web-floating-nav .nav-item.active {
+  background: linear-gradient(135deg, rgba(58, 198, 81, .25), rgba(202, 250, 65, .18));
+  color: #8af291;
+  box-shadow: inset 0 0 0 1px rgba(91, 224, 105, .3);
+}
+
+.mobile-app-shell.mobile-theme-dark .mobile-daily-preview-chart,
+.mobile-app-shell.mobile-theme-dark .mobile-chart-modal-scroll,
+.mobile-app-shell.mobile-theme-dark .mobile-chart-modal-canvas,
+.mobile-app-shell.mobile-theme-dark .mobile-chart-static-legend,
+.mobile-app-shell.mobile-theme-dark .mobile-chart-viewport-axis {
+  background: #171e1a;
+}
+
+.mobile-app-shell.mobile-theme-dark .mobile-daily-preview-callout {
+  background: linear-gradient(to top, rgba(23, 30, 26, .99) 35%, rgba(23, 30, 26, 0));
+  color: #9ba9a0;
+}
+
+.mobile-app-shell.mobile-theme-dark .mobile-daily-preview-callout strong {
+  color: #6de878;
+}
+
+.mobile-app-shell.mobile-theme-dark .mobile-chart-modal-panel {
+  border-color: #334039;
+  background: #171e1a;
+  box-shadow: 0 26px 80px rgba(0, 0, 0, .5);
+}
+
+.mobile-app-shell.mobile-theme-dark .mobile-chart-modal-header,
+.mobile-app-shell.mobile-theme-dark .mobile-chart-static-legend,
+.mobile-app-shell.mobile-theme-dark .mobile-chart-viewport-axis,
+.mobile-app-shell.mobile-theme-dark .mobile-chart-modal-hint {
+  border-color: #303b34;
+  background: #171e1a;
+  color: #9facA4;
+}
+
+.mobile-app-shell.mobile-theme-dark .mobile-chart-modal-close {
+  border-color: #3b493f;
+  background: #222b25;
+  color: #7aeb82;
+}
+
+.mobile-app-shell.mobile-theme-dark .chart-grid {
+  stroke: #344039;
+}
+
+.mobile-app-shell.mobile-theme-dark .chart-target {
+  stroke: #7f8d84;
+}
+
+.mobile-app-shell.mobile-theme-dark .chart-axis {
+  fill: #9ba8a0;
+}
+
+.mobile-app-shell.mobile-theme-dark .chart-dot {
+  stroke: #171e1a;
+}
+
+.mobile-app-shell.mobile-theme-dark .metric-modal-close {
+  background: #252e28;
+  color: #dce5df;
+}
+
+.mobile-app-shell.mobile-theme-dark .detail-grid {
+  border-color: #2f3a33;
+  background: #2f3a33;
+}
+
+.mobile-app-shell.mobile-theme-dark .sync-summary,
+.mobile-app-shell.mobile-theme-dark .setup-message {
+  border-color: #304037;
+  background: #18221b;
+  color: #a8b6ad;
+}
+
+.mobile-app-shell.mobile-theme-dark .session-welcome-overlay {
+  background: linear-gradient(135deg, rgba(32, 100, 44, .58), rgba(104, 126, 36, .55));
+}
+
+.mobile-app-shell.mobile-theme-dark .session-welcome-card {
+  border-color: rgba(91, 224, 105, .32);
+  background: rgba(19, 26, 21, .97);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, .44);
+}
+
+.mobile-app-shell.mobile-theme-dark .session-welcome-greeting {
+  color: #c4d0c8;
 }
