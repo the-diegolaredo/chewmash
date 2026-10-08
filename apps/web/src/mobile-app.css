@@ -1091,3 +1091,39 @@ body.mobile-chart-open {
 .mobile-app-shell.mobile-theme-dark .about-card-copy a:focus-visible {
   color: #a1f6a6;
 }
+
+
+/* Brighten the Picks context summary and make the notification bell match the
+   translucent green treatment used by the dark floating navigation. */
+.mobile-app-shell.mobile-theme-dark .picks-v2-context {
+  border-color: #31513d;
+  background: #173126;
+}
+
+.mobile-app-shell.mobile-theme-dark .picks-v2-context span {
+  color: #b8dfbf !important;
+}
+
+.mobile-app-shell.mobile-theme-dark .picks-v2-context strong {
+  color: #79ee82 !important;
+}
+
+.mobile-app-shell.mobile-theme-dark .sync-updates-button,
+.mobile-app-shell.mobile-theme-dark .sync-updates-button.has-unread {
+  border: 1px solid rgba(91, 224, 105, .30);
+  background: rgba(58, 198, 81, .18);
+  color: #effff1;
+  box-shadow:
+    inset 0 0 0 1px rgba(184, 255, 9, .05),
+    0 12px 28px rgba(0, 0, 0, .28);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.mobile-app-shell.mobile-theme-dark .sync-updates-button:hover,
+.mobile-app-shell.mobile-theme-dark .sync-updates-button.has-unread:hover {
+  background: rgba(58, 198, 81, .25);
+  box-shadow:
+    inset 0 0 0 1px rgba(184, 255, 9, .08),
+    0 14px 32px rgba(0, 0, 0, .32);
+}
