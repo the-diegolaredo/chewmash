@@ -10,6 +10,7 @@ import { AccountPage } from './pages/AccountPage';
 import { HomePage } from './pages/HomePage';
 import { MobileUploadPage } from './pages/MobileUploadPage';
 import { downloadBackup } from './platform/browser';
+import { setNativeMobileTheme } from './platform/native';
 import { loadInitialState, stateRepository } from './platform/state';
 import { PicksPage } from './PicksPage';
 import { SessionWelcome } from './SessionWelcome';
@@ -18,12 +19,21 @@ import { useMobileGetSync, type MobileGetSyncModel } from './useMobileGetSync';
 import { WebFloatingNav, type WebPrimaryView } from './WebFloatingNav';
 
 type View = WebPrimaryView | 'account' | 'about';
+type MobileTheme = 'light' | 'dark';
+
+const MOBILE_THEME_KEY = 'chewmash:mobile-theme:v1';
+
+function initialMobileTheme(): MobileTheme {
+  if (typeof localStorage === 'undefined') return 'light';
+  return localStorage.getItem(MOBILE_THEME_KEY) === 'dark' ? 'dark' : 'light';
+}
 
 export function MobileApp() {
   const [state, setState] = useState<ChewMashState | null>(null);
   const [view, setView] = useState<View>('home');
   const [error, setError] = useState<string | null>(null);
   const [planDraft, setPlanDraft] = useState<PlanSettings | null>(null);
+  const [theme, setTheme] = useState<MobileTheme>(initialMobileTheme);
   const backupInput = useRef<HTMLInputElement>(null);
   const mobileSync = useMobileGetSync(setState);
 
@@ -58,6 +68,12 @@ export function MobileApp() {
       setPlanDraft({ ...state.plan, awayPeriods: state.plan.awayPeriods.map(period => ({ ...period })) });
     }
   }, [state, planDraft]);
+
+  useEffect(() => {
+    localStorage.setItem(MOBILE_THEME_KEY, theme);
+    document.documentElement.style.colorScheme = theme;
+    void setNativeMobileTheme(theme).catch(() => undefined);
+  }, [theme]);
 
   const today = localDate();
   const snapshot = useMemo(
@@ -139,14 +155,29 @@ export function MobileApp() {
   const planChosen = Boolean(state && (state.updatedAt !== null || hasDiningData));
 
   return (
-    <main className="app-shell web-app-shell mobile-app-shell">
+    <main className={theme === 'dark' ? 'app-shell web-app-shell mobile-app-shell mobile-theme-dark' : 'app-shell web-app-shell mobile-app-shell'}>
       <header className="app-header mobile-app-header">
         <button className="brand" type="button" aria-label={view === 'about' ? 'Back to Home' : 'About chewmash and its land acknowledgment'} onClick={() => setView(view === 'about' ? 'home' : 'about')}>chewmash</button>
-        <div className="web-header-actions">
+        <div className="web-header-actions mobile-header-actions">
           <span className="web-beta-badge mobile-beta-badge">ios beta</span>
+          <button
+            className="mobile-header-icon-button mobile-theme-toggle"
+            type="button"
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-pressed={theme === 'dark'}
+            onClick={() => setTheme(current => current === 'dark' ? 'light' : 'dark')}
+          >
+            {theme === 'dark' ? <MoonIcon /> : <SunIcon />}
+          </button>
           {hasDiningData ? (
-            <button className="account-link" type="button" onClick={() => setView(view === 'account' ? 'home' : 'account')}>
-              {view === 'account' ? 'Done' : 'Account'}
+            <button
+              className={view === 'account' ? 'mobile-header-icon-button mobile-account-button active' : 'mobile-header-icon-button mobile-account-button'}
+              type="button"
+              aria-label={view === 'account' ? 'Close Account' : 'Open Account'}
+              aria-pressed={view === 'account'}
+              onClick={() => setView(view === 'account' ? 'home' : 'account')}
+            >
+              <ProfileIcon />
             </button>
           ) : null}
         </div>
@@ -283,5 +314,32 @@ function MobileSetupStep({ number, done, title, children }: {
         {children}
       </div>
     </article>
+  );
+}
+
+
+function SunIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="3.7" />
+      <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20 15.2A8.3 8.3 0 0 1 8.8 4a8.4 8.4 0 1 0 11.2 11.2Z" />
+    </svg>
+  );
+}
+
+function ProfileIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="8.2" r="3.4" />
+      <path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6" />
+    </svg>
   );
 }
