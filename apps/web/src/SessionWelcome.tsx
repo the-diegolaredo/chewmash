@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { ChewmashLogo } from './components/ChewmashLogo';
 
 export function SessionWelcome({ children }: { children: ReactNode }) {
   const [visible, setVisible] = useState(true);
@@ -24,7 +25,7 @@ export function SessionWelcome({ children }: { children: ReactNode }) {
           aria-label="Close welcome message"
         >
           <span className="session-welcome-card">
-            <span className="session-welcome-brand">chewmash</span>
+            <ChewmashLogo className="session-welcome-logo" />
             <strong className="session-welcome-greeting">{greeting}</strong>
           </span>
         </button>
