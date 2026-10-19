@@ -1,10 +1,12 @@
+import { ChewmashLogo } from '../components/ChewmashLogo';
+
 /** The website and Capacitor app intentionally share this page and its copy. */
 export function AboutPage() {
   return (
     <section className="about-page" aria-labelledby="about-page-title">
       <article className="about-card">
         <header className="about-card-header">
-          <h1 id="about-page-title">chewmash</h1>
+          <h1 id="about-page-title"><ChewmashLogo className="about-chewmash-logo" /></h1>
           <p>est. 2026</p>
         </header>
 
