@@ -72,6 +72,12 @@
   margin: 0 auto;
 }
 
+.about-chewmash-logo-dark-mobile {
+  display: none;
+  width: min(520px, 88%);
+  margin: 0 auto;
+}
+
 .about-card-header p {
   margin: 10px 0 0;
   color: #627468;
