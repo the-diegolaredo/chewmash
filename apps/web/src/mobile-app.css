@@ -1181,6 +1181,12 @@ body.mobile-chart-open {
   color: #bcefff;
 }
 
+/* Native mobile trims implementation/source footnotes from detail dialogs.
+   The desktop/web versions keep these notes available. */
+.mobile-app-active .metric-modal .detail-source {
+  display: none !important;
+}
+
 /* Metric/Picks detail modals are rendered into document.body via a portal.
    The body-level theme class keeps every popup aligned with native dark mode. */
 .mobile-theme-dark .metric-modal-backdrop {

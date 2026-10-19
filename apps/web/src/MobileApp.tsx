@@ -71,6 +71,16 @@ export function MobileApp() {
   }, [state, planDraft]);
 
   useEffect(() => {
+    document.documentElement.classList.add('mobile-app-active');
+    document.body.classList.add('mobile-app-active');
+
+    return () => {
+      document.documentElement.classList.remove('mobile-app-active');
+      document.body.classList.remove('mobile-app-active');
+    };
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem(MOBILE_THEME_KEY, theme);
     document.documentElement.style.colorScheme = theme;
     document.documentElement.classList.toggle('mobile-theme-dark', theme === 'dark');
