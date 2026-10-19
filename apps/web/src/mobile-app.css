@@ -1075,7 +1075,11 @@ body.mobile-chart-open {
 }
 
 .mobile-app-shell.mobile-theme-dark .about-chewmash-logo {
-  filter: brightness(0) invert(1);
+  display: none;
+}
+
+.mobile-app-shell.mobile-theme-dark .about-chewmash-logo-dark-mobile {
+  display: block;
 }
 
 .mobile-app-shell.mobile-theme-dark .about-card-header p {

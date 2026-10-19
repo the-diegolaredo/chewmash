@@ -6,7 +6,15 @@ export function AboutPage() {
     <section className="about-page" aria-labelledby="about-page-title">
       <article className="about-card">
         <header className="about-card-header">
-          <h1 id="about-page-title"><ChewmashLogo className="about-chewmash-logo" /></h1>
+          <h1 id="about-page-title">
+            <ChewmashLogo className="about-chewmash-logo" />
+            <img
+              className="about-chewmash-logo-dark-mobile"
+              src="/images/chewmash-land-ack-dark.svg"
+              alt="chewmash"
+              draggable={false}
+            />
+          </h1>
           <p>est. 2026</p>
         </header>
 
