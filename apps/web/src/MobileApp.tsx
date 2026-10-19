@@ -4,6 +4,7 @@ import { isSupportedDiningPlanBudget } from '../../../src/lib/diningPlans';
 import type { PlanSettings } from '../../../src/lib/types';
 import { sanitizeState, type ChewMashState } from '../../../src/storage/state';
 import { latestBalanceSnapshot, localDate, spendOnDate } from '../../../src/ui/utils';
+import { ChewmashLogo } from './components/ChewmashLogo';
 import { DiningPlanChoice } from './components/DiningPlanChoice';
 import { AboutPage } from './pages/AboutPage';
 import { AccountPage } from './pages/AccountPage';
@@ -164,7 +165,9 @@ export function MobileApp() {
   return (
     <main className={theme === 'dark' ? 'app-shell web-app-shell mobile-app-shell mobile-theme-dark' : 'app-shell web-app-shell mobile-app-shell'}>
       <header className="app-header mobile-app-header">
-        <button className="brand" type="button" aria-label={view === 'about' ? 'Back to Home' : 'About chewmash and its land acknowledgment'} onClick={() => setView(view === 'about' ? 'home' : 'about')}>chewmash</button>
+        <button className="brand" type="button" aria-label={view === 'about' ? 'Back to Home' : 'About chewmash and its land acknowledgment'} onClick={() => setView(view === 'about' ? 'home' : 'about')}>
+          <ChewmashLogo className="header-chewmash-logo" decorative />
+        </button>
         <div className="web-header-actions mobile-header-actions">
           <span className="web-beta-badge mobile-beta-badge">ios beta</span>
           <button
