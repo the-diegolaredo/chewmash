@@ -61,12 +61,15 @@
 
 .about-card-header h1 {
   margin: 0;
-  color: #269a42;
-  font-size: clamp(52px, 8vw, 82px);
-  font-weight: 850;
-  line-height: 1.02;
-  letter-spacing: -.05em;
+  display: flex;
+  justify-content: center;
+  line-height: 1;
   text-align: center;
+}
+
+.about-chewmash-logo {
+  width: min(520px, 88%);
+  margin: 0 auto;
 }
 
 .about-card-header p {
@@ -139,8 +142,8 @@
     margin-bottom: 22px;
   }
 
-  .about-card-header h1 {
-    font-size: clamp(46px, 11vw, 66px);
+  .about-chewmash-logo {
+    width: min(92%, 430px);
   }
 
   .about-card-copy {
