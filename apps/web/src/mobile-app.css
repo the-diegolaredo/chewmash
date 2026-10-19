@@ -37,6 +37,10 @@
   text-transform: lowercase;
 }
 
+.mobile-app-shell .header-chewmash-logo {
+  width: 124px;
+}
+
 .mobile-header-actions {
   gap: 8px;
 }
@@ -257,8 +261,8 @@
   padding: clamp(46px, 12vw, 70px) 22px;
 }
 
-.mobile-app-shell .session-welcome-brand {
-  font-size: clamp(54px, 18vw, 78px);
+.mobile-app-shell .session-welcome-logo {
+  width: min(82vw, 430px);
 }
 
 .mobile-app-shell .session-welcome-greeting {
@@ -1068,6 +1072,10 @@ body.mobile-chart-open {
 
 .mobile-app-shell.mobile-theme-dark .about-card-header h1 {
   color: #ffffff;
+}
+
+.mobile-app-shell.mobile-theme-dark .about-chewmash-logo {
+  filter: brightness(0) invert(1);
 }
 
 .mobile-app-shell.mobile-theme-dark .about-card-header p {

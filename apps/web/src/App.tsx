@@ -5,6 +5,7 @@ import type { PlanSettings } from '../../../src/lib/types';
 import { parseCbordPdfFile } from '../../../src/pdf/cbord';
 import { sanitizeState, type ChewMashState } from '../../../src/storage/state';
 import { latestBalanceSnapshot, localDate, money, spendOnDate } from '../../../src/ui/utils';
+import { ChewmashLogo } from './components/ChewmashLogo';
 import { ConnectorSummary } from './components/ConnectorSummary';
 import { AboutPage } from './pages/AboutPage';
 import { AccountPage } from './pages/AccountPage';
@@ -155,7 +156,9 @@ export function App() {
   return (
     <main className="app-shell web-app-shell">
       <header className="app-header">
-        <button className="brand" type="button" aria-label={view === 'about' ? 'Back to Home' : 'About chewmash and its land acknowledgment'} onClick={() => setView(view === 'about' ? 'home' : 'about')}>chewmash</button>
+        <button className="brand" type="button" aria-label={view === 'about' ? 'Back to Home' : 'About chewmash and its land acknowledgment'} onClick={() => setView(view === 'about' ? 'home' : 'about')}>
+          <ChewmashLogo className="header-chewmash-logo" decorative />
+        </button>
         <div className="web-header-actions">
           <span className="web-beta-badge">web beta</span>
           <button className="account-link" type="button" onClick={() => setView(view === 'account' ? 'home' : 'account')}>

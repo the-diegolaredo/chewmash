@@ -21,19 +21,35 @@ body {
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: #2b9a3d;
 }
 
-@supports ((-webkit-background-clip: text) or (background-clip: text)) {
-  .brand,
-  .first-run-brand,
-  .first-run-wordmark,
-  .session-welcome-brand {
-    background: var(--chewmash-accent-gradient);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
+.chewmash-logo {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  user-select: none;
+  pointer-events: none;
+}
+
+.header-chewmash-logo {
+  width: 132px;
+}
+
+.first-run-wordmark {
+  max-width: none !important;
+  display: flex;
+  justify-content: center;
+  margin: 0 auto !important;
+  line-height: 1 !important;
+}
+
+.first-run-chewmash-logo {
+  width: min(520px, 88vw);
 }
 
 .account-link {
@@ -106,15 +122,6 @@ body {
   border-bottom-color: #e7ebe5;
   background: linear-gradient(135deg, rgba(58, 198, 81, .055), rgba(202, 250, 65, .075) 48%, #fff 82%);
   text-align: center;
-}
-
-.first-run-wordmark {
-  max-width: none !important;
-  margin: 0 auto !important;
-  color: var(--chewmash-accent-start);
-  font-size: clamp(54px, 9vw, 84px) !important;
-  line-height: .92 !important;
-  letter-spacing: -.055em !important;
 }
 
 .first-run-tagline {

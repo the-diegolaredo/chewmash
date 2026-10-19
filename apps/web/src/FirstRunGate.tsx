@@ -3,6 +3,7 @@ import { parseCbordPdfFile } from '../../../src/pdf/cbord';
 import { sanitizeState, type ChewMashState } from '../../../src/storage/state';
 import { migrateLegacyWebState, webStateRepository } from '../../../src/storage/web';
 import { money } from '../../../src/ui/utils';
+import { ChewmashLogo } from './components/ChewmashLogo';
 import { DiningPlanChoice } from './components/DiningPlanChoice';
 import { useGetConnector } from './useGetConnector';
 
@@ -122,7 +123,7 @@ export function FirstRunGate({ children }: { children: ReactNode }) {
     <main className={mode === 'complete' ? 'first-run-shell first-run-complete' : 'first-run-shell'}>
       <section className="first-run-card" aria-labelledby="first-run-title">
         <div className="first-run-heading">
-          <h1 id="first-run-title" className="first-run-wordmark">chewmash</h1>
+          <h1 id="first-run-title" className="first-run-wordmark"><ChewmashLogo className="first-run-chewmash-logo" /></h1>
           <p className="first-run-tagline">Your Cal Poly dining tracker!</p>
           <p className="first-run-intro">Connect your Dining Dollars history in a few minutes. Your Cal Poly login stays between you, your browser, and GET.</p>
           <div className="first-run-platform-note" role="note">
