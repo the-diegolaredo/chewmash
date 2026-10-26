@@ -30,6 +30,10 @@ export function useMobileGetSync(onState: (state: ChewMashState) => void): Mobil
       return;
     }
 
+    window.alert(
+      'GET sync reminder\n\nAfter you sign in, find and tap “View All Transaction History” so chewmash can finish syncing your dining purchases.'
+    );
+
     setBusy(true);
     try {
       const payload = await captureGetOnDevice();
