@@ -122,6 +122,17 @@ private final class MobileGetSyncViewController: UIViewController, WKNavigationD
         configuration.websiteDataStore = .default()
         configuration.preferences.javaScriptCanOpenWindowsAutomatically = true
 
+        // Help iOS Password AutoFill (including third-party providers such as
+        // 1Password) recognize Cal Poly/GET login fields inside this WKWebView.
+        // The script only examines field metadata (type/name/id/autocomplete) and
+        // sets autocomplete hints. It never reads, stores, or transmits field values.
+        let autofillHintsScript = WKUserScript(
+            source: Self.autofillHintsScript,
+            injectionTime: .atDocumentEnd,
+            forMainFrameOnly: false
+        )
+        configuration.userContentController.addUserScript(autofillHintsScript)
+
         webView = WKWebView(frame: .zero, configuration: configuration)
         webView.translatesAutoresizingMaskIntoConstraints = false
         webView.navigationDelegate = self
@@ -138,6 +149,71 @@ private final class MobileGetSyncViewController: UIViewController, WKNavigationD
 
         loadGet()
     }
+
+    private static let autofillHintsScript = #"""
+    (() => {
+      const weakAutocompleteValues = new Set(['', 'off', 'nope', 'false']);
+
+      const metadata = (input) =>
+        [
+          input.getAttribute('name') || '',
+          input.getAttribute('id') || '',
+          input.getAttribute('aria-label') || '',
+          input.getAttribute('placeholder') || ''
+        ].join(' ').toLowerCase();
+
+      const canReplaceAutocomplete = (input) => {
+        const current = (input.getAttribute('autocomplete') || '').trim().toLowerCase();
+        return weakAutocompleteValues.has(current);
+      };
+
+      const enhanceFields = (root) => {
+        if (!root || !root.querySelectorAll) return;
+
+        const inputs = root.querySelectorAll('input');
+        inputs.forEach((input) => {
+          const type = (input.getAttribute('type') || 'text').toLowerCase();
+          const hints = metadata(input);
+
+          if (type === 'password') {
+            if (canReplaceAutocomplete(input)) {
+              input.setAttribute('autocomplete', 'current-password');
+            }
+            return;
+          }
+
+          const looksLikeUsername =
+            type === 'email' ||
+            /(user(name)?|login|email|netid|account|identifier)/.test(hints);
+
+          if (looksLikeUsername && canReplaceAutocomplete(input)) {
+            input.setAttribute('autocomplete', 'username');
+          }
+        });
+      };
+
+      const run = () => enhanceFields(document);
+      run();
+
+      const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          for (const node of mutation.addedNodes) {
+            if (node.nodeType !== Node.ELEMENT_NODE) continue;
+            if (node.matches?.('input')) {
+              enhanceFields(node.parentElement || document);
+            } else {
+              enhanceFields(node);
+            }
+          }
+        }
+      });
+
+      observer.observe(document.documentElement || document, {
+        childList: true,
+        subtree: true
+      });
+    })();
+    """#
 
     private func loadGet() {
         guard let url = URL(string: "https://get.cbord.com/calpoly/full/history.php") else {
