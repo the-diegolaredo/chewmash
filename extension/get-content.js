@@ -7,7 +7,7 @@
   const STATUS_KEY = 'chewmashGetStatus';
   const dateRe = /\b(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})\b/;
   const timeRe = /\b(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)\b/i;
-  const amountRe = /[-−]?\s*\$\s*\d[\d,]*\.\d{2}/g;
+  const amountRe = /[+\-−]?\s*\$\s*\d[\d,]*\.\d{2}/g;
 
   function toIsoDate(value) {
     const m = String(value || '').match(dateRe);
@@ -48,7 +48,12 @@
 
     const amountToken = amounts.at(-1);
     const signed = moneyNumber(amountToken);
-    if (signed === null || signed >= 0) return null;
+    if (signed === null || signed === 0) return null;
+
+    const normalizedAmountToken = String(amountToken || '').replace(/−/g, '-').replace(/\s+/g, '');
+    const isPurchase = normalizedAmountToken.startsWith('-');
+    const isReimbursement = normalizedAmountToken.startsWith('+');
+    if (!isPurchase && !isReimbursement) return null;
 
     const dateIdx = cells.findIndex(c => dateRe.test(c) || timeRe.test(c));
     const amountIdx = cells.findIndex(c => (c.match(amountRe) || []).length);
@@ -65,7 +70,8 @@
       time: time.replace(/\s+/g,' ').toUpperCase(),
       rawLocation,
       location: normalizeLocation(rawLocation),
-      amount: Math.abs(signed)
+      amount: Math.abs(signed),
+      kind: isReimbursement ? 'reimbursement' : 'purchase'
     };
   }
 
@@ -78,7 +84,7 @@
     }
     const seen = new Set();
     return found.filter(t => {
-      const k = `${t.date}|${t.time}|${t.rawLocation}|${t.amount.toFixed(2)}`;
+      const k = `${t.date}|${t.time}|${t.rawLocation}|${t.kind || 'purchase'}|${t.amount.toFixed(2)}`;
       if (seen.has(k)) return false;
       seen.add(k);
       return true;
