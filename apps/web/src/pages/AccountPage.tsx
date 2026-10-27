@@ -57,6 +57,16 @@ export function AccountPage({ state, planDraft, setPlanDraft, updateAway, savePl
         </div>
         <button className="primary-button" type="button" onClick={() => void savePlan()}>Save settings</button>
       </SectionCard>
+      {!native ? (
+        <SectionCard title="Policies & support">
+          <p className="section-copy">Short ChewMash policies and technical support information.</p>
+          <div className="button-row account-resource-links">
+            <a className="secondary-button account-resource-link" href="privacy/">Privacy policy</a>
+            <a className="secondary-button account-resource-link" href="marketing/">Marketing policy</a>
+            <a className="secondary-button account-resource-link" href="support/">IT support</a>
+          </div>
+        </SectionCard>
+      ) : null}
       <SectionCard title="Data controls">
         <p className="section-copy">
           {native

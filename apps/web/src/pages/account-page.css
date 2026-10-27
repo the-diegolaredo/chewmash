@@ -13,3 +13,16 @@
   outline: 2px solid rgba(21, 79, 58, .18);
   border-color: #154f3a;
 }
+
+
+.account-resource-links {
+  align-items: stretch;
+}
+
+.account-resource-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  text-decoration: none;
+}
