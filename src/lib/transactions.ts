@@ -13,12 +13,23 @@ export function normalizeTransaction(transaction: DiningTransaction): DiningTran
   if (!transaction.date || !Number.isFinite(amount) || amount <= 0) return null;
 
   const rawLocation = transaction.rawLocation || transaction.location;
+  const kind = transaction.kind === 'reimbursement' ? 'reimbursement' : 'purchase';
   return {
     ...transaction,
     rawLocation,
     location: normalizeLocation(rawLocation),
     amount,
+    kind,
   };
+}
+
+export function transactionNetAmount(transaction: DiningTransaction): number {
+  const amount = Math.abs(Number(transaction.amount) || 0);
+  return transaction.kind === 'reimbursement' ? -amount : amount;
+}
+
+export function isReimbursement(transaction: DiningTransaction): boolean {
+  return transaction.kind === 'reimbursement';
 }
 
 export function transactionKey(transaction: DiningTransaction): string {
@@ -26,6 +37,7 @@ export function transactionKey(transaction: DiningTransaction): string {
     transaction.date,
     String(transaction.time || '').trim().toUpperCase(),
     normalizeLocation(transaction.rawLocation || transaction.location),
+    transaction.kind === 'reimbursement' ? 'reimbursement' : 'purchase',
     Math.abs(Number(transaction.amount) || 0).toFixed(2),
   ].join('|');
 }
@@ -49,14 +61,14 @@ export function dedupeTransactions(transactions: DiningTransaction[]): DiningTra
 export function itemizedSpend(transactions: DiningTransaction[], through?: IsoDate): number {
   return transactions.reduce((total, transaction) => {
     if (through && transaction.date > through) return total;
-    return total + (Number(transaction.amount) || 0);
+    return total + transactionNetAmount(transaction);
   }, 0);
 }
 
 export function dailyTotals(transactions: DiningTransaction[]): Map<IsoDate, number> {
   const totals = new Map<IsoDate, number>();
   for (const transaction of transactions) {
-    totals.set(transaction.date, (totals.get(transaction.date) || 0) + (Number(transaction.amount) || 0));
+    totals.set(transaction.date, (totals.get(transaction.date) || 0) + transactionNetAmount(transaction));
   }
   return totals;
 }
