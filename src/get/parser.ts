@@ -3,7 +3,7 @@ import type { DiningTransaction, IsoDate } from '../lib/types';
 
 const DATE_RE = /\b(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})\b/;
 const TIME_RE = /\b(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)\b/i;
-const AMOUNT_RE = /[-−]?\s*\$\s*\d[\d,]*\.\d{2}/g;
+const AMOUNT_RE = /[+\-−]?\s*\$\s*\d[\d,]*\.\d{2}/g;
 
 export function toIsoDate(value: string): IsoDate | null {
   const match = value.match(DATE_RE);
@@ -38,8 +38,14 @@ export function parseGetRowCells(cells: string[]): DiningTransaction | null {
   const amounts = joined.match(AMOUNT_RE) ?? [];
   if (!dateToken || !timeToken || !amounts.length) return null;
 
-  const signedAmount = moneyNumber(amounts.at(-1) ?? '');
-  if (signedAmount === null || signedAmount >= 0) return null;
+  const amountToken = amounts.at(-1) ?? '';
+  const signedAmount = moneyNumber(amountToken);
+  if (signedAmount === null || signedAmount === 0) return null;
+
+  const normalizedAmountToken = amountToken.replace(/−/g, '-').replace(/\s+/g, '');
+  const isPurchase = normalizedAmountToken.startsWith('-');
+  const isReimbursement = normalizedAmountToken.startsWith('+');
+  if (!isPurchase && !isReimbursement) return null;
 
   const dateIndex = cleanCells.findIndex(cell => DATE_RE.test(cell) || TIME_RE.test(cell));
   const amountIndex = cleanCells.findIndex(cell => (cell.match(AMOUNT_RE) ?? []).length > 0);
@@ -71,6 +77,7 @@ export function parseGetRowCells(cells: string[]): DiningTransaction | null {
     rawLocation,
     location: normalizeLocation(rawLocation),
     amount: Math.abs(signedAmount),
+    kind: isReimbursement ? 'reimbursement' : 'purchase',
     source: 'GET sync',
   };
 }

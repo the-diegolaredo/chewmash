@@ -63,7 +63,7 @@ export function useGetConnector(
     if (snapshot.syncStatus?.error) {
       setMessage(`GET sync error: ${snapshot.syncStatus.error}`);
     } else if (snapshot.syncStatus) {
-      setMessage(`${after.transactions.length} purchases available · ${added} newly copied to this website`);
+      setMessage(`${after.transactions.length} transactions available · ${added} newly copied to this website`);
     }
   }, [onState, rememberSyncStatus]);
 
@@ -142,7 +142,7 @@ export function useGetConnector(
 
       setVersion(response.payload?.version ?? version);
       if (response.payload?.snapshot) await applySnapshot(response.payload.snapshot);
-      setMessage('GET opened. Sign in normally if needed. When Transaction History loads, chewmash will copy the parsed purchases into this website automatically.');
+      setMessage('GET opened. Sign in normally if needed. When Transaction History loads, chewmash will copy the parsed purchases and reimbursements into this website automatically.');
     } finally {
       setBusy(false);
     }

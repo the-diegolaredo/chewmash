@@ -10,7 +10,7 @@ declare global {
   var chewmashCaptureGet: ((document: unknown) => {
     matchedTransactions: number;
     balance: number | null;
-    transactions: Array<{ date: string; time: string; rawLocation: string; location: string; amount: number; source: string }>;
+    transactions: Array<{ date: string; time: string; rawLocation: string; location: string; amount: number; kind: 'purchase' | 'reimbursement'; source: string }>;
   }) | undefined;
 }
 
@@ -53,7 +53,23 @@ describe('mobile GET capture script', () => {
       rawLocation: 'Grubhub Panda Express 1234',
       location: 'Panda Express',
       amount: 13.07,
+      kind: 'purchase',
       source: 'GET sync',
+    });
+  });
+
+  it('captures explicit GET credits as reimbursements', () => {
+    const result = globalThis.chewmashCaptureGet!(fakeDocument([
+      ['09/05/2026 12:14 PM', 'Grubhub Panda Express 1234', '- $13.07'],
+      ['09/05/2026 12:30 PM', 'Grubhub Panda Express 1234', '+ $13.07'],
+      ['09/05/2026 12:45 PM', 'Deposit', '$20.00'],
+    ]));
+
+    expect(result.matchedTransactions).toBe(2);
+    expect(result.transactions[1]).toMatchObject({
+      amount: 13.07,
+      kind: 'reimbursement',
+      location: 'Panda Express',
     });
   });
 

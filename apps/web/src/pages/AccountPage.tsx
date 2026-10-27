@@ -90,13 +90,13 @@ export function AccountPage({ state, planDraft, setPlanDraft, updateAway, savePl
       <SectionCard title="Imported transactions" action={<span className="section-meta">{transactions.length} stored</span>}>
         <div className="transaction-table-wrap">
           <table className="transaction-table">
-            <thead><tr><th>Date</th><th>Time</th><th>Location</th><th>Source</th><th>Amount</th></tr></thead>
+            <thead><tr><th>Date</th><th>Time</th><th>Location</th><th>Type</th><th>Source</th><th>Amount</th></tr></thead>
             <tbody>
               {transactions.length ? transactions.map((transaction, index) => (
                 <tr key={`${transaction.date}-${transaction.time}-${transaction.location}-${transaction.amount}-${index}`}>
-                  <td>{transaction.date}</td><td>{transaction.time ?? '—'}</td><td>{transaction.location}</td><td>{transaction.source ?? 'Imported'}</td><td>{money(transaction.amount)}</td>
+                  <td>{transaction.date}</td><td>{transaction.time ?? '—'}</td><td>{transaction.location}</td><td>{transaction.kind === 'reimbursement' ? 'Reimbursement' : 'Purchase'}</td><td>{transaction.source ?? 'Imported'}</td><td>{transaction.kind === 'reimbursement' ? `+${money(transaction.amount)}` : money(transaction.amount)}</td>
                 </tr>
-              )) : <tr><td colSpan={5} className="empty-cell">No imported transactions yet.</td></tr>}
+              )) : <tr><td colSpan={6} className="empty-cell">No imported transactions yet.</td></tr>}
             </tbody>
           </table>
         </div>

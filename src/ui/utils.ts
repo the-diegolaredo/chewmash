@@ -1,3 +1,4 @@
+import { transactionNetAmount } from '../lib/transactions';
 import type { BalanceSnapshot, DiningTransaction, IsoDate } from '../lib/types';
 
 export function money(value: number): string {
@@ -25,7 +26,7 @@ export function latestBalanceSnapshot(snapshots: BalanceSnapshot[], asOf: IsoDat
 }
 
 export function spendOnDate(transactions: DiningTransaction[], date: IsoDate): number {
-  return transactions.reduce((sum, transaction) => transaction.date === date ? sum + transaction.amount : sum, 0);
+  return transactions.reduce((sum, transaction) => transaction.date === date ? sum + transactionNetAmount(transaction) : sum, 0);
 }
 
 export function mostRecentDataDate(transactions: DiningTransaction[], snapshots: BalanceSnapshot[]): IsoDate | null {

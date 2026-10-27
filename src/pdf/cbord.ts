@@ -103,7 +103,7 @@ export function parseCbordContent(contents: string[], source: string): ParsedCbo
   const transactions: DiningTransaction[] = [];
   for (const group of rowGroups.values()) {
     const date = group.find(chunk => /^\d{2}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2}\s+[AP]M$/i.test(chunk.text));
-    const amount = group.find(chunk => /^-?\$\d[\d,]*\.\d{2}$/.test(chunk.text));
+    const amount = group.find(chunk => /^[+\-]?\s*\$\d[\d,]*\.\d{2}$/.test(chunk.text));
     if (!date || !amount) continue;
 
     const location = group
@@ -112,8 +112,11 @@ export function parseCbordContent(contents: string[], source: string): ParsedCbo
     if (!location) continue;
 
     const dateMatch = date.text.match(/^(\d{2}\/\d{2}\/\d{2})\s+(.+)$/);
-    const signedAmount = Number(amount.text.replace(/[^0-9.-]/g, ''));
-    if (!dateMatch || !Number.isFinite(signedAmount) || signedAmount >= 0) continue;
+    const normalizedAmountToken = amount.text.replace(/−/g, '-').replace(/\s+/g, '');
+    const signedAmount = Number(normalizedAmountToken.replace(/[^0-9.+-]/g, ''));
+    const isPurchase = normalizedAmountToken.startsWith('-');
+    const isReimbursement = normalizedAmountToken.startsWith('+');
+    if (!dateMatch || !Number.isFinite(signedAmount) || signedAmount === 0 || (!isPurchase && !isReimbursement)) continue;
 
     const isoDate = parseShortDate(dateMatch[1] ?? '');
     if (!isoDate) continue;
@@ -124,6 +127,7 @@ export function parseCbordContent(contents: string[], source: string): ParsedCbo
       rawLocation: location.text,
       location: normalizeLocation(location.text),
       amount: Math.abs(signedAmount),
+      kind: isReimbursement ? 'reimbursement' : 'purchase',
       source,
     });
   }

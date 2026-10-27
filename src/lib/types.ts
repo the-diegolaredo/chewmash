@@ -1,11 +1,14 @@
 export type IsoDate = `${number}-${number}-${number}` | string;
 
+export type DiningTransactionKind = 'purchase' | 'reimbursement';
+
 export interface DiningTransaction {
   date: IsoDate;
   time?: string;
   rawLocation?: string;
   location: string;
   amount: number;
+  kind?: DiningTransactionKind;
   source?: string;
 }
 

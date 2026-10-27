@@ -16,6 +16,7 @@ describe('GET parser', () => {
       rawLocation: 'Subway Aero',
       location: 'Subway Aero',
       amount: 13.07,
+      kind: 'purchase',
       source: 'GET sync',
     });
   });
@@ -30,9 +31,27 @@ describe('GET parser', () => {
 
     expect(transaction?.location).toBe('Jamba Juice');
     expect(transaction?.amount).toBe(9.49);
+    expect(transaction?.kind).toBe('purchase');
   });
 
-  it('ignores positive loads and header rows', () => {
+  it('parses explicit positive credits as reimbursements', () => {
+    const transaction = parseGetRowCells([
+      'First Year Plus',
+      '09/04/2026 02:15:00 PM',
+      'Subway Aero',
+      '+ $13.07',
+    ]);
+
+    expect(transaction).toMatchObject({
+      date: '2026-09-04',
+      location: 'Subway Aero',
+      amount: 13.07,
+      kind: 'reimbursement',
+      source: 'GET sync',
+    });
+  });
+
+  it('ignores unsigned positive loads and header rows', () => {
     expect(parseGetRowCells([
       'ACCOUNT NAME:',
       'DATE & TIME',
@@ -57,5 +76,6 @@ describe('GET parser', () => {
     expect(toIsoDate('8/19/26')).toBe('2026-08-19');
     expect(moneyNumber('- $13.07')).toBe(-13.07);
     expect(moneyNumber('− $9.49')).toBe(-9.49);
+    expect(moneyNumber('+ $9.49')).toBe(9.49);
   });
 });

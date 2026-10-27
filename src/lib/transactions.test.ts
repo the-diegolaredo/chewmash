@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dedupeTransactions, normalizeLocation, transactionKey } from './transactions';
+import { dedupeTransactions, itemizedSpend, normalizeLocation, transactionKey } from './transactions';
 import type { DiningTransaction } from './types';
 
 describe('transaction helpers', () => {
@@ -32,5 +32,24 @@ describe('transaction helpers', () => {
     ]);
 
     expect(result[0]?.amount).toBe(13.07);
+    expect(result[0]?.kind).toBe('purchase');
+  });
+
+  it('nets reimbursements against itemized spend without deduping them as purchases', () => {
+    const purchase: DiningTransaction = {
+      date: '2026-09-04',
+      time: '11:18:57 AM',
+      location: 'Jamba Juice',
+      amount: 9.49,
+      kind: 'purchase',
+    };
+    const reimbursement: DiningTransaction = {
+      ...purchase,
+      kind: 'reimbursement',
+    };
+
+    const result = dedupeTransactions([purchase, reimbursement]);
+    expect(result).toHaveLength(2);
+    expect(itemizedSpend(result)).toBe(0);
   });
 });

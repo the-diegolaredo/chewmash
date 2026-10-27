@@ -67,7 +67,7 @@ export function useMobileGetSync(onState: (state: ChewMashState) => void): Mobil
       setSyncStatus(status);
       onState(after);
       setMessage(
-        `${status.matchedTransactions} purchase${status.matchedTransactions === 1 ? '' : 's'} found · ${added} new${status.balanceFound ? ` · balance ${money(payload.balance!)}` : ''}`,
+        `${status.matchedTransactions} transaction${status.matchedTransactions === 1 ? '' : 's'} found · ${added} new${status.balanceFound ? ` · balance ${money(payload.balance!)}` : ''}`,
       );
     } catch (reason) {
       const text = reason instanceof Error ? reason.message : String(reason);

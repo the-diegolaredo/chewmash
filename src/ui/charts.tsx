@@ -7,7 +7,7 @@ import tacoBellLogo from '../assets/brands/taco-bell.svg?url';
 import starbucksLogo from '../assets/brands/starbucks.svg?url';
 import shakeSmartLogo from '../assets/brands/shake-smart.svg?url';
 import { campusDates } from '../lib/dates';
-import { dailyTotals, normalizeLocation } from '../lib/transactions';
+import { dailyTotals, isReimbursement, normalizeLocation, transactionNetAmount } from '../lib/transactions';
 import type { DiningTransaction, IsoDate, PlanSettings } from '../lib/types';
 
 function money(value: number): string {
@@ -52,7 +52,7 @@ function DaySpendModal({
   for (const transaction of transactions) {
     if (transaction.date !== date) continue;
     const location = normalizeLocation(transaction.rawLocation || transaction.location);
-    byLocation.set(location, (byLocation.get(location) ?? 0) + transaction.amount);
+    byLocation.set(location, (byLocation.get(location) ?? 0) + transactionNetAmount(transaction));
   }
   const rows = [...byLocation.entries()].sort((left, right) => right[1] - left[1]);
   const total = rows.reduce((sum, [, value]) => sum + value, 0);
@@ -77,7 +77,7 @@ function DaySpendModal({
         <h2 id="day-spend-modal-title">{fullDate(date)}</h2>
         <strong className="metric-modal-value">{money(total)}</strong>
         <div className="metric-modal-body">
-          <p>Total itemized Dining Dollars spent that day.</p>
+          <p>Net itemized Dining Dollars activity that day, with reimbursements subtracted from purchases.</p>
           <div className="transaction-table-wrap">
             <table className="transaction-table">
               <thead>
@@ -118,10 +118,12 @@ function LocationSpendModal({
   const matching = transactions
     .filter(transaction => normalizeLocation(transaction.rawLocation || transaction.location) === location)
     .sort((left, right) => `${right.date} ${right.time ?? ''}`.localeCompare(`${left.date} ${left.time ?? ''}`));
-  const total = matching.reduce((sum, transaction) => sum + transaction.amount, 0);
-  const overallTotal = transactions.reduce((sum, transaction) => sum + transaction.amount, 0);
-  const average = matching.length ? total / matching.length : 0;
-  const share = overallTotal ? total / overallTotal * 100 : 0;
+  const total = matching.reduce((sum, transaction) => sum + transactionNetAmount(transaction), 0);
+  const overallTotal = transactions.reduce((sum, transaction) => sum + transactionNetAmount(transaction), 0);
+  const purchases = matching.filter(transaction => !isReimbursement(transaction));
+  const purchaseSpend = purchases.reduce((sum, transaction) => sum + transaction.amount, 0);
+  const average = purchases.length ? purchaseSpend / purchases.length : 0;
+  const share = overallTotal > 0 ? total / overallTotal * 100 : 0;
   const recent = matching.slice(0, 8);
 
   return (
@@ -144,9 +146,9 @@ function LocationSpendModal({
         <h2 id="location-spend-modal-title">{location}</h2>
         <strong className="metric-modal-value">{money(total)}</strong>
         <div className="metric-modal-body">
-          <p>Total itemized Dining Dollars spent at this location.</p>
+          <p>Net itemized Dining Dollars spent at this location, with reimbursements credited back.</p>
           <div className="detail-grid">
-            <div><span>Purchases</span><strong>{matching.length}</strong></div>
+            <div><span>Purchases</span><strong>{purchases.length}</strong></div>
             <div><span>Average purchase</span><strong>{money(average)}</strong></div>
             <div><span>Share of itemized spend</span><strong>{share.toFixed(1)}%</strong></div>
           </div>
@@ -155,7 +157,7 @@ function LocationSpendModal({
             <div className="transaction-table-wrap">
               <table className="transaction-table">
                 <thead>
-                  <tr><th>Date</th><th>Time</th><th>Amount</th></tr>
+                  <tr><th>Date</th><th>Time</th><th>Type</th><th>Amount</th></tr>
                 </thead>
                 <tbody>
                   {recent.length ? recent.map((transaction, index) => (
@@ -165,13 +167,13 @@ function LocationSpendModal({
                       <td>{money(transaction.amount)}</td>
                     </tr>
                   )) : (
-                    <tr><td colSpan={3} className="empty-cell">No transactions recorded for this location.</td></tr>
+                    <tr><td colSpan={4} className="empty-cell">No transactions recorded for this location.</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
             {matching.length > recent.length ? (
-              <small className="detail-source">Showing the {recent.length} most recent of {matching.length} purchases.</small>
+              <small className="detail-source">Showing the {recent.length} most recent of {matching.length} transactions.</small>
             ) : null}
           </div>
         </div>
@@ -206,7 +208,7 @@ export function DailySpendChart({
   const totals = dailyTotals(transactions);
   if (!dates.length) return <div className="empty-chart">No campus days to display yet.</div>;
 
-  const values = dates.map(date => totals.get(date) ?? 0);
+  const values = dates.map(date => Math.max(0, totals.get(date) ?? 0));
   const max = Math.max(target * 1.35, currentAverage * 1.15, ...values, 1);
   const width = renderWidth ?? 680;
   const height = 266;
@@ -634,13 +636,13 @@ export function PlaceSpendChart({
   const totals = new Map<string, number>();
   for (const transaction of transactions) {
     const location = normalizeLocation(transaction.rawLocation || transaction.location);
-    totals.set(location, (totals.get(location) ?? 0) + transaction.amount);
+    totals.set(location, (totals.get(location) ?? 0) + transactionNetAmount(transaction));
   }
 
-  const rows = [...totals.entries()].sort((left, right) => right[1] - left[1]).slice(0, 7);
+  const rows = [...totals.entries()].filter(([, value]) => value > 0).sort((left, right) => right[1] - left[1]).slice(0, 7);
   if (!rows.length) return <div className="empty-chart">Import transactions to see spending by location.</div>;
 
-  const total = [...totals.values()].reduce((sum, value) => sum + value, 0);
+  const total = [...totals.values()].filter(value => value > 0).reduce((sum, value) => sum + value, 0);
   const max = Math.max(...rows.map(([, value]) => value), 1);
   const greenShades = ['#154f3a', '#1b5a41', '#23654a', '#2d7053', '#397c5e', '#48896a', '#5b9679'];
 

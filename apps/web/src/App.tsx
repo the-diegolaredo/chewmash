@@ -160,7 +160,7 @@ export function App() {
           <ChewmashLogo className="header-chewmash-logo" decorative />
         </button>
         <div className="web-header-actions">
-          <span className="web-beta-badge">web beta</span>
+          {view !== 'home' ? <span className="web-beta-badge">web beta</span> : null}
           <button className="account-link" type="button" onClick={() => setView(view === 'account' ? 'home' : 'account')}>
             {view === 'account' ? 'Done' : 'Account'}
           </button>
