@@ -140,6 +140,7 @@ function coerceTransaction(input: unknown): DiningTransaction | null {
     rawLocation,
     location: stringValue(record.location) ?? rawLocation,
     amount,
+    kind: record.kind === 'reimbursement' ? 'reimbursement' : 'purchase',
     source: stringValue(record.source) ?? undefined,
   };
 }
