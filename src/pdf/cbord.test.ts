@@ -21,12 +21,28 @@ describe('CBORD PDF parser', () => {
       time: '01:10:00 PM',
       location: 'Chick-fil-A',
       amount: 11.55,
+      kind: 'purchase',
       source: 'August.pdf',
     });
     expect(parsed.balanceSnapshot).toEqual({
       date: '2026-09-04',
       balance: 3047.09,
       source: 'August.pdf',
+    });
+  });
+
+  it('parses explicit statement credits as reimbursements', () => {
+    const content = [
+      'BT 100 600 Td (09/04/26 01:13:27 PM) Tj ET',
+      'BT 300 600 Td (Subway Aero) Tj ET',
+      'BT 500 600 Td (+$13.07) Tj ET',
+    ].join('\n');
+
+    const parsed = parseCbordContent([content], 'September.pdf');
+    expect(parsed.transactions[0]).toMatchObject({
+      amount: 13.07,
+      kind: 'reimbursement',
+      location: 'Subway Aero',
     });
   });
 
