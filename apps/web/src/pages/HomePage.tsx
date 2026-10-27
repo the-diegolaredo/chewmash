@@ -25,7 +25,7 @@ export function HomePage({ state, stats, today, mobileMode = false }: {
     ? 'Your spending is close to the planned pace.'
     : `${money(Math.abs(stats.paceDelta))} ${stats.status === 'under' ? 'ahead of' : 'beyond'} your planned pace.`;
   const todayNote = dollarsLeftToday >= 0
-    ? `${money(spentToday)} spent of ${money(stats.targetPerCampusDay)} target`
+    ? `${money(spentToday)} net spent of ${money(stats.targetPerCampusDay)} target`
     : `${money(Math.abs(dollarsLeftToday))} over today's target`;
 
   const centerMetric = useCallback((index: number, behavior: ScrollBehavior = 'smooth') => {
@@ -109,7 +109,7 @@ export function HomePage({ state, stats, today, mobileMode = false }: {
 
       {detailMetric === 'average' ? (
         <MetricDetailModal title="Daily average" value={money(stats.averageSpentPerCampusDay)} onClose={() => setDetailMetric(null)}>
-          <p>Your daily average is based on itemized Dining Dollars purchases across elapsed campus days.</p>
+          <p>Your daily average is based on itemized Dining Dollars purchases across elapsed campus days, with reimbursements credited back.</p>
           <div className="detail-grid">
             <div><span>Planned daily target</span><strong>{money(stats.targetPerCampusDay)}</strong></div>
             <div><span>Itemized spent so far</span><strong>{money(stats.itemizedSpent)}</strong></div>
@@ -119,10 +119,10 @@ export function HomePage({ state, stats, today, mobileMode = false }: {
       ) : null}
       {detailMetric === 'today' ? (
         <MetricDetailModal title="Dining Dollars left today" value={money(dollarsLeftToday)} onClose={() => setDetailMetric(null)}>
-          <p>This is today's planned Dining Dollars target minus the itemized purchases you've made today.</p>
+          <p>This is today's planned Dining Dollars target minus itemized purchases, with any reimbursements credited back.</p>
           <div className="detail-grid">
             <div><span>Daily target</span><strong>{money(stats.targetPerCampusDay)}</strong></div>
-            <div><span>Spent today</span><strong>{money(spentToday)}</strong></div>
+            <div><span>Net spent today</span><strong>{money(spentToday)}</strong></div>
             <div><span>{dollarsLeftToday >= 0 ? 'Left today' : 'Over target'}</span><strong>{money(dollarsLeftToday >= 0 ? dollarsLeftToday : Math.abs(dollarsLeftToday))}</strong></div>
           </div>
           <small className="detail-source">Only purchases dated {humanDate(today)} are subtracted from today's target.</small>
