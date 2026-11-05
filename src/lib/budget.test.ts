@@ -83,6 +83,31 @@ describe('calculateBudgetStats', () => {
     expect(stats.officialSpent).toBeNull();
   });
 
+
+  it('does not turn a starting-plan deposit into negative average spending', () => {
+    const fallSettings: PlanSettings = {
+      startingBudget: 3295,
+      startDate: '2026-08-19',
+      endDate: '2026-12-18',
+      awayPeriods: [{ start: '2026-11-23', end: '2026-11-29' }],
+    };
+    // Same arithmetic as the reported Nov 5 negative average: a $3,295
+    // funding credit had been subtracted from genuine meal purchases.
+    const stats = calculateBudgetStats({
+      settings: fallSettings,
+      asOf: '2026-11-05',
+      transactions: [
+        { date: '2026-08-19', location: 'Unknown', amount: 3295, kind: 'reimbursement' },
+        { date: '2026-11-05', location: 'Dining purchases', amount: 2076.04, kind: 'purchase' },
+      ],
+    });
+    expect(stats.elapsedCampusDays).toBe(79);
+    expect(stats.itemizedSpent).toBe(2076.04);
+    expect(stats.averageSpentPerCampusDay).toBeCloseTo(26.28, 2);
+    expect(stats.paceDelta).toBeCloseTo(187.48, 2);
+    expect(stats.status).toBe('under');
+  });
+
   it('ignores a balance snapshot dated after the requested as-of date', () => {
     expect(validBalanceSnapshot({ date: '2026-01-08', balance: 50 }, '2026-01-04')).toBeNull();
   });

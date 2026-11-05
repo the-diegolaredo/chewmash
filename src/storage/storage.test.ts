@@ -74,6 +74,22 @@ describe('typed extension storage', () => {
     expect(state.balanceSnapshots).toEqual([]);
   });
 
+
+  it('repairs old local data containing an initial-plan funding credit when loading', async () => {
+    const storage = new MemoryStorage();
+    storage.data[STORAGE_KEY] = {
+      ...createDefaultState(),
+      transactions: [
+        { date: '2026-08-19', location: 'Unknown', amount: 3295, kind: 'reimbursement' },
+        { date: '2026-08-20', location: 'Jamba Juice', amount: 12.50, kind: 'purchase' },
+        { date: '2026-08-20', location: 'Jamba Juice', amount: 2.50, kind: 'reimbursement' },
+      ],
+    };
+    const state = await createStateRepository(storage).load();
+    expect(state.transactions).toHaveLength(2);
+    expect(state.transactions.map(item => item.amount)).toEqual([12.5, 2.5]);
+  });
+
   it('preserves a real zero-dollar balance', () => {
     const state = sanitizeState({
       plan: DEFAULT_PLAN_SETTINGS,

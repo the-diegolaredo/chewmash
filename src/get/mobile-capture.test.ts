@@ -73,6 +73,17 @@ describe('mobile GET capture script', () => {
     });
   });
 
+
+  it('excludes initial-plan credits even when no merchant is present', () => {
+    const result = globalThis.chewmashCaptureGet!(fakeDocument([
+      ['First Year Plus', '08/19/2026 09:00 AM', '+ $3,295.00'],
+      ['First Year Plus', '09/05/2026 12:14 PM', 'Jamba Juice', '- $10.00'],
+      ['First Year Plus', '09/05/2026 01:20 PM', 'Jamba Juice', '+ $2.00'],
+    ]));
+    expect(result.matchedTransactions).toBe(2);
+    expect(result.transactions.map(transaction => transaction.kind)).toEqual(['purchase', 'reimbursement']);
+  });
+
   it('deduplicates matching rows and keeps missing balance as null', () => {
     const row = ['09/05/2026 8:02 AM', 'Starbucks 1001', '− $6.25'];
     const result = globalThis.chewmashCaptureGet!(fakeDocument([row, row]));
