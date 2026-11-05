@@ -46,6 +46,26 @@ describe('CBORD PDF parser', () => {
     });
   });
 
+
+  it('skips a positive plan deposit but preserves a genuine restaurant refund', () => {
+    const content = [
+      'BT 100 600 Td (08/19/26 08:00:00 AM) Tj ET',
+      'BT 300 600 Td (Dining Plan Deposit) Tj ET',
+      'BT 500 600 Td (+$3,295.00) Tj ET',
+      'BT 100 580 Td (08/20/26 08:00:00 AM) Tj ET',
+      'BT 300 580 Td (Jamba Juice) Tj ET',
+      'BT 500 580 Td (+$4.00) Tj ET',
+    ].join('\n');
+
+    const parsed = parseCbordContent([content], 'August.pdf');
+    expect(parsed.transactions).toHaveLength(1);
+    expect(parsed.transactions[0]).toMatchObject({
+      location: 'Jamba Juice',
+      amount: 4,
+      kind: 'reimbursement',
+    });
+  });
+
   it('does not invent a zero balance when a statement has no ending balance', () => {
     const content = [
       'BT 100 600 Td (09/04/26 01:13:27 PM) Tj ET',

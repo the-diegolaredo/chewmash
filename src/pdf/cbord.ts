@@ -1,4 +1,4 @@
-import { normalizeLocation } from '../lib/transactions';
+import { isDiningPlanFundingCredit, normalizeLocation } from '../lib/transactions';
 import type { BalanceSnapshot, DiningTransaction } from '../lib/types';
 
 interface PdfTextChunk {
@@ -121,7 +121,7 @@ export function parseCbordContent(contents: string[], source: string): ParsedCbo
     const isoDate = parseShortDate(dateMatch[1] ?? '');
     if (!isoDate) continue;
 
-    transactions.push({
+    const transaction: DiningTransaction = {
       date: isoDate,
       time: dateMatch[2],
       rawLocation: location.text,
@@ -129,7 +129,8 @@ export function parseCbordContent(contents: string[], source: string): ParsedCbo
       amount: Math.abs(signedAmount),
       kind: isReimbursement ? 'reimbursement' : 'purchase',
       source,
-    });
+    };
+    if (!isDiningPlanFundingCredit(transaction)) transactions.push(transaction);
   }
 
   const snapshotDate = parseLongDate(printedText)

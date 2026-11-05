@@ -52,4 +52,28 @@ describe('transaction helpers', () => {
     expect(result).toHaveLength(2);
     expect(itemizedSpend(result)).toBe(0);
   });
+  it('ignores plan funding credits already stored while keeping meal refunds', () => {
+    const transactions: DiningTransaction[] = [
+      { date: '2026-08-19', location: 'Unknown', amount: 3295, kind: 'reimbursement', source: 'GET sync' },
+      { date: '2026-09-04', location: 'Jamba Juice', amount: 25, kind: 'purchase' },
+      { date: '2026-09-04', location: 'Jamba Juice', amount: 5, kind: 'reimbursement' },
+    ];
+    expect(itemizedSpend(transactions)).toBe(20);
+    const clean = dedupeTransactions(transactions);
+    expect(clean).toHaveLength(2);
+    expect(itemizedSpend(clean)).toBe(20);
+  });
+
+  it('rejects named deposits and all supported plan amounts, but not normal refunds', () => {
+    const transactions: DiningTransaction[] = [
+      { date: '2026-08-19', location: 'Dining Plan Deposit', amount: 75, kind: 'reimbursement' },
+      { date: '2026-08-19', location: 'Unknown', amount: 2908, kind: 'reimbursement' },
+      { date: '2026-08-19', location: 'Unknown', amount: 3709, kind: 'reimbursement' },
+      { date: '2026-08-20', location: 'Starbucks', amount: 6.25, kind: 'reimbursement' },
+    ];
+    expect(dedupeTransactions(transactions)).toEqual([
+      expect.objectContaining({ location: 'Starbucks', amount: 6.25, kind: 'reimbursement' }),
+    ]);
+  });
+
 });

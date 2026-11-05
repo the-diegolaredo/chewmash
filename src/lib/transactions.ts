@@ -1,4 +1,17 @@
+import { DINING_PLANS } from './diningPlans';
 import type { DiningTransaction, IsoDate } from './types';
+
+const FUNDING_CREDIT_LABEL_RE = /\b(?:deposit|re[-\s]?load(?:ed|ing)?|top[-\s]?up|(?:initial|opening|starting)(?:\s+account)?\s+balance|(?:account|plan)\s+funding|meal[-\s]?plan|funds?\s+added|value\s+added|add\s+funds|balance\s+transfer|first[-\s]?year[-\s]?(?:max|plus|limited))\b/i;
+
+/** GET marks both meal refunds and plan deposits with a + sign. Only meal
+ * refunds belong in net meal spending; plan funding is not a reimbursement. */
+export function isDiningPlanFundingCredit(transaction: DiningTransaction): boolean {
+  if (transaction.kind !== 'reimbursement') return false;
+  const amountInCents = Math.round(Math.abs(Number(transaction.amount) || 0) * 100);
+  if (DINING_PLANS.some(plan => amountInCents === Math.round(plan.startingBudget * 100))) return true;
+  return FUNDING_CREDIT_LABEL_RE.test([transaction.rawLocation, transaction.location].filter(Boolean).join(' '));
+}
+
 
 export function normalizeLocation(value: string | null | undefined): string {
   return String(value || 'Unknown')
@@ -14,6 +27,7 @@ export function normalizeTransaction(transaction: DiningTransaction): DiningTran
 
   const rawLocation = transaction.rawLocation || transaction.location;
   const kind = transaction.kind === 'reimbursement' ? 'reimbursement' : 'purchase';
+  if (isDiningPlanFundingCredit({ ...transaction, amount, rawLocation, kind })) return null;
   return {
     ...transaction,
     rawLocation,
@@ -24,6 +38,7 @@ export function normalizeTransaction(transaction: DiningTransaction): DiningTran
 }
 
 export function transactionNetAmount(transaction: DiningTransaction): number {
+  if (isDiningPlanFundingCredit(transaction)) return 0;
   const amount = Math.abs(Number(transaction.amount) || 0);
   return transaction.kind === 'reimbursement' ? -amount : amount;
 }

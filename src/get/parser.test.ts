@@ -51,6 +51,21 @@ describe('GET parser', () => {
     });
   });
 
+
+  it('ignores a plus-signed plan load instead of counting it as a meal refund', () => {
+    expect(parseGetRowCells([
+      'First Year Plus',
+      '08/19/2026 09:00 AM',
+      'Dining Plan Deposit',
+      '+ $3,295.00',
+    ])).toBeNull();
+    expect(parseGetRowCells([
+      'First Year Plus',
+      '08/19/2026 09:00 AM',
+      '+ $3,295.00',
+    ])).toBeNull();
+  });
+
   it('ignores unsigned positive loads and header rows', () => {
     expect(parseGetRowCells([
       'ACCOUNT NAME:',
