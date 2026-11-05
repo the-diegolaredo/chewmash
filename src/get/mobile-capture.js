@@ -19,6 +19,14 @@
       .trim() || 'Unknown';
   }
 
+  const FUNDING_CREDIT_LABEL_RE = /\b(?:deposit|re[-\s]?load(?:ed|ing)?|top[-\s]?up|(?:initial|opening|starting)(?:\s+account)?\s+balance|(?:account|plan)\s+funding|meal[-\s]?plan|funds?\s+added|value\s+added|add\s+funds|balance\s+transfer|first[-\s]?year[-\s]?(?:max|plus|limited))\b/i;
+
+  function isDiningPlanFundingCredit(location, amount) {
+    const cents = Math.round(Math.abs(Number(amount) || 0) * 100);
+    return [290800, 329500, 370900].includes(cents)
+      || FUNDING_CREDIT_LABEL_RE.test(String(location || ''));
+  }
+
   function toIsoDate(value) {
     const match = String(value || '').match(DATE_RE);
     if (!match) return null;
@@ -79,7 +87,7 @@
     }
 
     const date = toIsoDate(dateToken);
-    if (!date) return null;
+    if (!date || (isReimbursement && isDiningPlanFundingCredit(rawLocation, signedAmount))) return null;
 
     return {
       date,

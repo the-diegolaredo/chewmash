@@ -1,4 +1,4 @@
-import { normalizeLocation } from '../lib/transactions';
+import { isDiningPlanFundingCredit, normalizeLocation } from '../lib/transactions';
 import type { DiningTransaction, IsoDate } from '../lib/types';
 
 const DATE_RE = /\b(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})\b/;
@@ -71,7 +71,7 @@ export function parseGetRowCells(cells: string[]): DiningTransaction | null {
   const date = toIsoDate(dateToken);
   if (!date) return null;
 
-  return {
+  const transaction: DiningTransaction = {
     date,
     time: timeToken.replace(/\s+/g, ' ').toUpperCase(),
     rawLocation,
@@ -80,6 +80,7 @@ export function parseGetRowCells(cells: string[]): DiningTransaction | null {
     kind: isReimbursement ? 'reimbursement' : 'purchase',
     source: 'GET sync',
   };
+  return isDiningPlanFundingCredit(transaction) ? null : transaction;
 }
 
 export function parseGetBalanceText(text: string): number | null {

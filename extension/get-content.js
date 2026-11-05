@@ -9,6 +9,14 @@
   const timeRe = /\b(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)\b/i;
   const amountRe = /[+\-−]?\s*\$\s*\d[\d,]*\.\d{2}/g;
 
+  const FUNDING_CREDIT_LABEL_RE = /\b(?:deposit|re[-\s]?load(?:ed|ing)?|top[-\s]?up|(?:initial|opening|starting)(?:\s+account)?\s+balance|(?:account|plan)\s+funding|meal[-\s]?plan|funds?\s+added|value\s+added|add\s+funds|balance\s+transfer|first[-\s]?year[-\s]?(?:max|plus|limited))\b/i;
+
+  function isDiningPlanFundingCredit(location, amount) {
+    const cents = Math.round(Math.abs(Number(amount) || 0) * 100);
+    return [290800, 329500, 370900].includes(cents)
+      || FUNDING_CREDIT_LABEL_RE.test(String(location || ''));
+  }
+
   function toIsoDate(value) {
     const m = String(value || '').match(dateRe);
     if (!m) return null;
@@ -64,6 +72,8 @@
     if (!rawLocation) {
       rawLocation = cells.find(c => !dateRe.test(c) && !timeRe.test(c) && !(c.match(amountRe)||[]).length && !/^First Year Plus$/i.test(c)) || 'Unknown';
     }
+
+    if (isReimbursement && isDiningPlanFundingCredit(rawLocation, signed)) return null;
 
     return {
       date: toIsoDate(date),
